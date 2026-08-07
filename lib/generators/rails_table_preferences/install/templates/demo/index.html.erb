@@ -59,6 +59,23 @@
   </dl>
 </details>
 
+<section class="rails-table-preferences-demo-summary rails-table-preferences-demo-task-map" aria-labelledby="rails-table-preferences-demo-task-map-heading">
+  <h2 id="rails-table-preferences-demo-task-map-heading">検証タスクマップ</h2>
+
+  <p>
+    目的が決まっている場合は、該当する確認セクションへ直接移動します。
+    editor や table の基本操作を見たあと、必要な証跡だけをここから拾えます。
+  </p>
+
+  <ul class="rails-table-preferences-demo-task-list">
+    <li><a href="#rails-table-preferences-demo-verification-context">owner isolation / scope precedence</a></li>
+    <li><a href="#rails-table-preferences-demo-reset-section">reset baseline</a></li>
+    <li><a href="#rails-table-preferences-demo-async-failure-section">async failure recovery</a></li>
+    <li><a href="#rails-table-preferences-demo-hidden-fields-section">hidden fields evidence</a></li>
+    <li><a href="#rails-table-preferences-demo-export-payload-section">export payload evidence</a></li>
+  </ul>
+</section>
+
 <style<%= respond_to?(:content_security_policy_nonce) && content_security_policy_nonce.present? ? tag.attributes(nonce: content_security_policy_nonce) : nil %>>
   .rails-table-preferences-demo-scroll {
     max-width: 100%;
@@ -104,6 +121,42 @@
 
   .rails-table-preferences-demo-summary dd {
     margin: 0.25rem 0 0;
+  }
+
+  .rails-table-preferences-demo-task-map {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .rails-table-preferences-demo-task-map h2,
+  .rails-table-preferences-demo-task-map p {
+    margin: 0;
+  }
+
+  .rails-table-preferences-demo-task-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  .rails-table-preferences-demo-task-list a {
+    display: inline-flex;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid #9ca3af;
+    border-radius: 999px;
+    background: white;
+    color: #111827;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .rails-table-preferences-demo-task-list a:focus,
+  .rails-table-preferences-demo-task-list a:hover {
+    border-color: #1d4ed8;
+    color: #1e3a8a;
   }
 
   .rails-table-preferences-demo-details summary {
@@ -264,7 +317,7 @@
   <%= submit_tag "検索" %>
 <% end %>
 
-<details class="rails-table-preferences-demo-summary rails-table-preferences-demo-support-details">
+<details class="rails-table-preferences-demo-summary rails-table-preferences-demo-support-details" id="rails-table-preferences-demo-hidden-fields-section">
   <summary>検索フォーム hidden fields プレビュー</summary>
 
   <p>
@@ -344,7 +397,7 @@
   <% end %>
 </div>
 
-<section class="rails-table-preferences-demo-summary rails-table-preferences-demo-verification-context">
+<section class="rails-table-preferences-demo-summary rails-table-preferences-demo-verification-context" id="rails-table-preferences-demo-verification-context">
   <h2>検証コンテキスト</h2>
 
   <p>
@@ -469,7 +522,7 @@
   </div>
 </section>
 
-<details class="rails-table-preferences-demo-summary rails-table-preferences-demo-support-details">
+<details class="rails-table-preferences-demo-summary rails-table-preferences-demo-support-details" id="rails-table-preferences-demo-export-payload-section">
   <summary>export payload プレビュー</summary>
 
   <p>
@@ -543,7 +596,7 @@
   </p>
 </details>
 
-<details class="rails-table-preferences-demo-summary rails-table-preferences-demo-support-details" data-rails-table-preferences-demo-reset>
+<details class="rails-table-preferences-demo-summary rails-table-preferences-demo-support-details" id="rails-table-preferences-demo-reset-section" data-rails-table-preferences-demo-reset>
   <summary>デモ状態リセット</summary>
 
   <p>
@@ -563,7 +616,7 @@
      data-rails-table-preferences-demo-reset-status></p>
 </details>
 
-<details class="rails-table-preferences-demo-summary rails-table-preferences-demo-support-details" data-rails-table-preferences-demo-failure>
+<details class="rails-table-preferences-demo-summary rails-table-preferences-demo-support-details" id="rails-table-preferences-demo-async-failure-section" data-rails-table-preferences-demo-failure>
   <summary>非同期失敗チェック</summary>
 
   <p>

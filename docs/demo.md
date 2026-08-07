@@ -41,6 +41,8 @@ The sample rows are intentionally a little more practical than a three-row place
 
 Delivery-date samples use a demo-only fixed baseline of `2024-01-15`. When collecting manual evidence, you can record the visible date values as stable sample data while still treating sort and filter behavior as the actual verification target.
 
+The generated screen includes a `Verification task map` near the top. Use it after the editor/table smoke check to jump directly to owner isolation and scope precedence, demo reset, async failure recovery, hidden fields evidence, or export payload evidence without scanning every support section in order.
+
 The same screen now includes a lightweight hidden fields preview for the generated search form. It shows the escaped hidden inputs produced by `table_preferences_hidden_fields(...)`, so you can confirm how saved filter and sort state will roundtrip through an existing GET search form without adding host-app search code to the demo.
 
 The same screen now includes a lightweight export payload preview. It shows the ordered `headers`, `column_keys`, and `export_keys` that the current saved table settings would pass into `rails_table_preference_export_payload(...)`, so you can confirm hidden-column exclusion, saved order, and `export_key` metadata without wiring a real CSV action first.
@@ -178,6 +180,7 @@ The generated demo screen includes:
 - one shared preset example with read-only fallback behavior
 - one role preset example for `roles: ["operations"]`, including role-over-shared default resolution
 - one organization preset example for `organization: "tokyo-hq"`, including organization-over-shared default resolution when no owner or matching role default exists
+- verification task map for jumping to owner/scope, reset, async failure, hidden fields, and export evidence sections
 - demo-only owner preset reset for returning to the seeded baseline
 - bundled status feedback for async preset actions
 - temporary busy-state disabling for preset controls and action buttons while bundled async preset actions run
@@ -199,6 +202,7 @@ On the demo screen, confirm:
 
 - [ ] The editor appears above the table.
 - [ ] The table appears with Japanese headers.
+- [ ] The `Verification task map` links jump to the owner/scope context, reset, async failure, hidden fields preview, and export payload preview sections without crowding the top of the demo at a narrow viewport.
 - [ ] The internal cost column does not appear.
 - [ ] Apply hides and shows columns.
 - [ ] Editor row drag changes column order.
