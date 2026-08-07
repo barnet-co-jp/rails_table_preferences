@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 RailsTablePreferences::Engine.routes.draw do
-  scope "preferences/:table_key" do
+  scope "preferences/:table_key", constraints: { table_key: %r{[^/]+} } do
     get "/", to: "preferences#index", as: nil
     post "/", to: "preferences#create", as: nil
     get "/:name", to: "preferences#show", as: nil

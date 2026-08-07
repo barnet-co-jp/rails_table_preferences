@@ -25,7 +25,7 @@ PUT    /rails_table_preferences/preferences/:table_key/:name
 DELETE /rails_table_preferences/preferences/:table_key/:name
 ```
 
-`:table_key` identifies the table surface, such as `orders` or `warehouse_stocks`. `:name` identifies the preset name. When a request omits `name` in the body, the controller falls back to `preference_name` and then to `default`.
+`:table_key` identifies the table surface, such as `orders` or `warehouse_stocks`. Dots are valid inside the table key, so a logical surface such as `orders.index` routes as `/rails_table_preferences/preferences/orders.index` instead of treating `.index` as a response format. Slashes still split path segments, so use a stable key that does not depend on nested URL paths. `:name` identifies the preset name. When a request omits `name` in the body, the controller falls back to `preference_name` and then to `default`.
 
 ## URL source of truth
 

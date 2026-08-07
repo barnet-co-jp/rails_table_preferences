@@ -93,6 +93,7 @@ Until v0.1.0 is tagged, the detailed entries in this section are the temporary s
 
 ### Fixed
 
+- Engine routes accept `table_key` values containing dots without treating the suffix as a response format.
 - Generator task loading works when the gem is used from a host Rails app.
 - Generated migration index names avoid database identifier length issues.
 - Rails 7.0 / Ruby 3.1 pull-request compatibility checks avoid `i18n` 1.15.x because that dependency line requires Fiber storage APIs unavailable on Ruby 3.1.

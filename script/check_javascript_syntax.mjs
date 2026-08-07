@@ -122,6 +122,10 @@ for (const [name, value] of Object.entries(imports)) {
   if (typeof value !== "function") {
     throw new Error("Expected " + name + " to resolve to a controller class, got " + typeof value)
   }
+
+  if (typeof value.prototype.showAllEditorColumns !== "function") {
+    throw new Error("Expected " + name + " to expose showAllEditorColumns")
+  }
 }
 
 if (packageRootDefault !== namedController) {

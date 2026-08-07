@@ -362,17 +362,17 @@ Check:
    - `-preset-name`
    - `-default-preset-hint`
 
-   If two editors render the same exact ids, the copied/customized partial likely replaced the bundled per-render prefix with a static value.
+   If two editors render the same exact ids, first check whether both helper calls passed the same explicit `editor_instance_key:`. When you pass `editor_instance_key:`, keep it unique per rendered editor instance on the same page, for example `"orders-page"` and `"orders-dialog"`.
 
 3. If the host app copied/customized the partial, look for hard-coded ids such as `preset-select`, `preset-name`, or `default-preset-hint`.
 
-   The safe pattern is the same one documented in [Quick start](quick_start.md): preserve the label/input and helper-text relationships, but keep ids unique per rendered instance.
+   The safe pattern is the same one documented in [Quick start](quick_start.md): preserve the label/input and helper-text relationships, but keep ids unique per rendered instance. If the copied partial needs stable ids across repeated renders, keep using the passed `editor_instance_key` local when building the bundled id prefix instead of replacing it with a static value.
 
-4. Do not try to fix this by inventing a new helper keyword first.
+4. Use `editor_instance_key:` only when the host app needs stable generated control ids.
 
-   The current helper contract does not expose an `editor_instance_key:` keyword for host apps. When the page renders multiple editors, keep `table_key` stable for the logical table and restore unique per-render ids in the partial markup instead.
+   The helper exposes `editor_instance_key:` for drawers, dialogs, repeated renders, or tests that need predictable preset select/name/default hint ids. It is not a root element id/class/data/aria placement API. For root placement attributes, use [Editor root HTML options](editor_root_options.md) instead.
 
-5. Re-run the narrow manual checks after adjusting the markup.
+5. Re-run the narrow manual checks after adjusting the helper call or copied markup.
 
    Use the same checks already called out in [Accessibility baseline](accessibility.md) and [Manual QA checklist](manual_qa.md): render two editors, click each preset label, confirm focus stays inside the matching editor, and confirm each default preset checkbox describes only its local helper text.
 

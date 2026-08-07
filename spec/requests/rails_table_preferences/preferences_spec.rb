@@ -65,6 +65,20 @@ RSpec.describe "RailsTablePreferences::Preferences", type: :request do
       expect(response).to have_http_status(:ok)
       expect(JSON.parse(response.body)["preferences"].map { |preference| preference["name"] }).to eq(%w[admin-view tokyo-view])
     end
+
+    it "accepts table keys containing dots" do
+      RailsTablePreferences::Preference.create!(
+        user: user,
+        table_key: "orders.index",
+        name: "default",
+        settings: { "columns" => [] }
+      )
+
+      get "/rails_table_preferences/preferences/orders.index"
+
+      expect(response).to have_http_status(:ok)
+      expect(JSON.parse(response.body)["preferences"].map { |preference| preference["name"] }).to eq(["default"])
+    end
   end
 
   describe "GET /rails_table_preferences/preferences/:table_key/:name" do
