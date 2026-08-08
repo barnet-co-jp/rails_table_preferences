@@ -887,6 +887,7 @@ export default class RailsTablePreferencesController extends RailsTablePreferenc
         this.renderEditor()
         this.clearEditorSearchQuery()
         this.apply()
+        this.broadcastSettingsSync()
         this.syncPresetEditingState()
         this.markEditorClean()
         this.syncResetButtonState()
@@ -1050,6 +1051,7 @@ export default class RailsTablePreferencesController extends RailsTablePreferenc
     this.closeFilterPanel()
     this.renderEditor()
     this.apply()
+    this.broadcastSettingsSync()
     this.markEditorClean()
     this.syncResetButtonState()
   }
@@ -1060,6 +1062,7 @@ export default class RailsTablePreferencesController extends RailsTablePreferenc
     this.settingsValue = { ...this.settingsValue, filters: {}, sorts: [] }
     this.closeFilterPanel()
     this.apply()
+    this.broadcastSettingsSync()
     this.updateDirtyStateFromEditor()
     this.syncResetButtonState()
     this.dispatchPreferenceEvent("applied", { action: "clear-filters-and-sorts" })

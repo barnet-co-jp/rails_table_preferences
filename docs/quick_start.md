@@ -41,6 +41,16 @@ The generator copies:
 - `app/javascript/controllers/rails_table_preferences_controller.js`
 - `app/assets/stylesheets/rails_table_preferences.css`
 
+### Stimulus prerequisite
+
+The interactive editor and table behavior require a running Stimulus application. The Ruby gem and generator copy the controller, but they do not install or start Stimulus for the host app.
+
+- Default Rails apps using `stimulus-rails`: confirm the normal controller manifest is active; the copied `_controller.js` file is then registered automatically.
+- Rails apps without Stimulus: add `stimulus-rails` and run `bin/rails stimulus:install`, or install `@hotwired/stimulus` in the host frontend and start one application instance.
+- Vite or another custom bundler: reuse the app's existing Stimulus application and follow the explicit registration section below.
+
+Do not call `Application.start()` twice in the same host app.
+
 Run the migration:
 
 ```bash
@@ -259,9 +269,9 @@ end
 
 The `data-rails-table-preferences-column-key` values must match the keys passed to `table_preferences_column`.
 
-The editor helper and the table helper each render their own `rails-table-preferences` controller root. With this default helper composition, the table root applies the settings it receives when the page loads, while the editor root owns the Apply, Save, Load, and Delete controls. Applying changes from the editor does not automatically reach a sibling table root unless the host app adds its own synchronization or renders the target table inside the same controller root. Use Save plus reload/navigation, a helper-free same-root table, or host-owned lifecycle event handling when the screen needs immediate table DOM updates after an editor action.
+The editor helper and table helper render separate `rails-table-preferences` controller roots. Apply, Reset, Show all columns, successful preset Save/Create/Load/Delete operations, and the packaged clear-filters-and-sorts action immediately synchronize settings to connected table roots with the same `table_key`. The table follows the active preset name while another editor root keeps its own draft state.
 
-For the exact controller-root and target-table rules, see [JavaScript controller notes](javascript_controller.md#minimal-dom-contract-for-helper-free-tables). When moving a `resource_table_for` or `tree_resource_table_for` editor with `render_editor: false`, use the [Resource table editor placement checklist](render_editor_placement_manual_qa.md) to confirm the separated editor and table still receive the same `table_key`, `name`, `settings`, and `columns`.
+Use a different `table_key` for tables that should not synchronize. Synchronization is limited to connected roots in the same document; it does not cross iframes, tabs, or windows, and updates emitted while a Turbo-replaced root is disconnected are not replayed. Each Turbo response should therefore render the current server-side `settings` and preset `name`. For the exact controller-root, target-table, and synchronization rules, see [JavaScript controller notes](javascript_controller.md#cross-root-settings-synchronization). When moving a `resource_table_for` or `tree_resource_table_for` editor with `render_editor: false`, use the [Resource table editor placement checklist](render_editor_placement_manual_qa.md) to confirm the separated editor and table still receive the same `table_key`, `name`, `settings`, and `columns`.
 
 ### When one page renders multiple editors
 

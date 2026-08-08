@@ -5,7 +5,7 @@ RSpec.describe "rails_table_preferences reset lifecycle event source" do
     File.expand_path("../../app/javascript/rails_table_preferences/controller.js", __dir__)
   end
 
-  let(:source) { File.read(source_path) }
+  let(:source) { File.read(source_path).gsub(/\r\n?/, "\n") }
 
   it "keeps reset editor wired to the applied lifecycle event without dispatching while busy" do
     expect(source).to include("resetEditor(event)")

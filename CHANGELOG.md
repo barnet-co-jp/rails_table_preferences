@@ -57,6 +57,9 @@ Until v0.1.0 is tagged, the detailed entries in this section are the temporary s
 
 ### Changed
 
+- Separate editor and table Stimulus roots with the same `table_key` now synchronize applied settings, reset/show-all recovery actions, preset mutations, and filter/sort clearing immediately without overwriting sibling editor drafts.
+- README and Quick Start now state the Stimulus runtime prerequisite before engine and frontend-specific setup.
+
 - The initial release target now includes the former v0.2 advanced preference distribution and table layout features.
 - README roadmap and current scope were updated to reflect the expanded v0.1 scope.
 - Generated migrations use nullable owner references and `scope_type` / `scope_key` to support owner, shared, role, and organization presets.

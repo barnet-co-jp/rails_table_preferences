@@ -19,8 +19,8 @@ RSpec.describe "package entrypoint controller source" do
     File.expand_path("../app/javascript/rails_table_preferences/index.d.ts", __dir__)
   end
 
-  let(:controller_source) { File.read(controller_source_path) }
-  let(:base_controller_source) { File.read(base_controller_source_path) }
+  let(:controller_source) { File.read(controller_source_path).gsub(/\r\n?/, "\n") }
+  let(:base_controller_source) { File.read(base_controller_source_path).gsub(/\r\n?/, "\n") }
   let(:controller_declaration) { File.read(controller_declaration_path) }
   let(:index_declaration) { File.read(index_declaration_path) }
 

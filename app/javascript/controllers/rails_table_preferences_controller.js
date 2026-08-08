@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 let filterPanelInstanceSequence = 0
+const settingsSyncEventName = "rails-table-preferences:settings-sync"
 
 // Applies and edits saved table display preferences for a server-rendered table.
 export default class extends Controller {
@@ -60,6 +61,7 @@ export default class extends Controller {
   connect() {
     this.lifecycleGeneration = (this.lifecycleGeneration || 0) + 1
     this.connected = true
+    this.installSettingsSyncListener()
     this.filterPanelInstanceId ||= ++filterPanelInstanceSequence
     this.busy = false
     this.draggedEditorRow = null
@@ -85,8 +87,51 @@ export default class extends Controller {
   disconnect() {
     this.connected = false
     this.lifecycleGeneration = (this.lifecycleGeneration || 0) + 1
+    this.uninstallSettingsSyncListener()
     this.uninstallDocumentResizeListeners()
     this.closeFilterPanel()
+  }
+
+  installSettingsSyncListener() {
+    if (typeof document === "undefined") return
+    this.settingsSyncListener ||= this.receiveSettingsSync.bind(this)
+    document.addEventListener(settingsSyncEventName, this.settingsSyncListener)
+  }
+
+  uninstallSettingsSyncListener() {
+    if (typeof document === "undefined" || !this.settingsSyncListener) return
+    document.removeEventListener(settingsSyncEventName, this.settingsSyncListener)
+  }
+
+  broadcastSettingsSync() {
+    if (typeof CustomEvent === "undefined" || !this.element?.dispatchEvent) return
+
+    this.element.dispatchEvent(new CustomEvent(settingsSyncEventName, {
+      bubbles: true,
+      detail: {
+        tableKey: this.tableKeyValue,
+        name: this.currentPresetName,
+        settings: this.settingsSyncSnapshot(this.settingsValue)
+      }
+    }))
+  }
+
+  receiveSettingsSync(event) {
+    if (!this.connected || event.target === this.element || !this.tableElement) return
+
+    const detail = event.detail || {}
+    if (String(detail.tableKey) !== String(this.tableKeyValue)) return
+    if (!detail.settings || typeof detail.settings !== "object" || Array.isArray(detail.settings)) return
+
+    this.nameValue = detail.name || "default"
+    this.urlValue = this.preferenceUrl(this.nameValue)
+    this.settingsValue = this.mergeSettings(this.defaultSettings, detail.settings)
+    this.apply()
+  }
+
+  settingsSyncSnapshot(settings) {
+    if (typeof structuredClone === "function") return structuredClone(settings || {})
+    return JSON.parse(JSON.stringify(settings || {}))
   }
 
   apply() {
@@ -103,6 +148,7 @@ export default class extends Controller {
     if (event) event.preventDefault()
     this.settingsValue = this.settingsFromEditor()
     this.apply()
+    this.broadcastSettingsSync()
   }
 
   async saveFromEditor(event) {
@@ -157,6 +203,7 @@ export default class extends Controller {
       this.closeFilterPanel()
       this.renderEditor()
       this.apply()
+      this.broadcastSettingsSync()
       this.syncPresetEditingState()
       await this.refreshPresetOptionsAfterMutation(generation)
     }, {
@@ -196,6 +243,7 @@ export default class extends Controller {
     this.closeFilterPanel()
     this.renderEditor()
     this.apply()
+    this.broadcastSettingsSync()
     this.setStatus(this.resetStatusLabelValue)
   }
 
@@ -338,6 +386,7 @@ export default class extends Controller {
     this.closeFilterPanel()
     this.renderEditor()
     this.apply()
+    this.broadcastSettingsSync()
     this.syncPresetEditingState()
   }
 

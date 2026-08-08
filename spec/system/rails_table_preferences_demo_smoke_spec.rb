@@ -11,6 +11,7 @@ class RailsTablePreferencesSystemSmokeOrdersController < ApplicationController
 
   CONTROLLER_SOURCE = begin
     File.read(File.expand_path("../../app/javascript/controllers/rails_table_preferences_controller.js", __dir__))
+      .gsub(/\r\n?/, "\n")
       .sub("import { Controller } from \"@hotwired/stimulus\"\n\n", "")
       .sub("export default class extends Controller {", "class RailsTablePreferencesController extends Controller {")
   end

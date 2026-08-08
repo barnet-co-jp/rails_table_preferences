@@ -91,6 +91,8 @@ The generator creates:
 - `app/javascript/controllers/rails_table_preferences_controller.js`
 - `app/assets/stylesheets/rails_table_preferences.css`
 
+The interactive editor and table require a running Stimulus application. The gem copies the controller but does not install or start Stimulus. Default `stimulus-rails` apps normally register the copied controller automatically; apps without Stimulus must install it, and Vite/custom bundler apps must register the packaged controller with their existing Stimulus application. See [Quick start](docs/quick_start.md#stimulus-prerequisite) and [JavaScript entrypoints](docs/javascript_entrypoints.md).
+
 Mount the engine when using the bundled JSON API:
 
 ```ruby
