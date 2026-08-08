@@ -5,7 +5,7 @@ RSpec.describe "rails_table_preferences_controller.js" do
     File.expand_path("../../app/javascript/controllers/rails_table_preferences_controller.js", __dir__)
   end
 
-  let(:source) { File.read(source_path) }
+  let(:source) { File.read(source_path).gsub(/\r\n?/, "\n") }
 
   it "defines status and read-only hint targets and defaults generated editor labels to Japanese" do
     expect(source).to include('static targets = ["editorRows", "presetName", "presetSelect", "defaultPreset", "status", "readOnlyHint"]')

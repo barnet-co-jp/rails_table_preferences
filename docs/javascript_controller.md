@@ -42,6 +42,16 @@ The sort handler also ignores active drag and resize operations.
 
 Column resizing uses Pointer Events for the right-edge handle (`pointerdown`, `pointermove`, `pointerup`, and `pointercancel`) so mouse, touch, and pen input share the same width update path. The handle sets `touch-action: none` on its hit area to keep touch resizing from turning into page scroll or header drag, while double-click auto-fit stays on the separate `dblclick` path.
 
+## Cross-root settings synchronization
+
+The editor and table helpers normally render sibling `rails-table-preferences` controller roots. Apply, Reset, Show all columns, successful Save/Create/Load/Delete operations, and the package controller's clear-filters-and-sorts action broadcast an internal settings snapshot. Connected table roots with the same `tableKey` apply that snapshot immediately and follow the active preset name and URL.
+
+Synchronization deliberately targets table roots only. Another editor with the same `tableKey` keeps its draft and dirty state, a different `tableKey` is ignored, and the source root does not reapply its own event. Disconnect removes the listener so Turbo reconnects do not accumulate updates. Treat this internal synchronization event as controller plumbing rather than a host-app lifecycle API; host integrations should continue to use the packaged public events below.
+
+The synchronization bus is document-local. It does not cross iframes, browser tabs, or windows. When Turbo replaces a frame or page region, the disconnected root stops receiving updates and a newly connected root starts from its server-rendered settings before receiving later broadcasts; updates emitted while no matching table root is connected are not replayed. Keep the server-rendered `settings` and preset `name` aligned for each Turbo response instead of relying on the internal event as persistent state.
+
+Use a distinct `table_key` when two tables on one page should not share display state. `editor_instance_key` controls generated editor element IDs and is not a synchronization routing key.
+
 ## Host app lifecycle events
 
 The packaged controller entrypoint dispatches a small set of bubbling Stimulus events from the controller root after user-facing preference operations finish:

@@ -11,10 +11,12 @@ class RailsTablePreferencesFilterPanelAccessibilityController < ApplicationContr
 
   CONTROLLER_SOURCE = begin
     base_source = File.read(File.expand_path("../../app/javascript/controllers/rails_table_preferences_controller.js", __dir__))
+      .gsub(/\r\n?/, "\n")
       .sub("import { Controller } from \"@hotwired/stimulus\"\n\n", "")
       .sub("export default class extends Controller {", "class RailsTablePreferencesBaseController extends Controller {")
 
     package_source = File.read(File.expand_path("../../app/javascript/rails_table_preferences/controller.js", __dir__))
+      .gsub(/\r\n?/, "\n")
       .sub("import RailsTablePreferencesBaseController from \"../controllers/rails_table_preferences_controller\"\n\n", "")
       .sub("export default class RailsTablePreferencesController extends RailsTablePreferencesBaseController {", "class RailsTablePreferencesController extends RailsTablePreferencesBaseController {")
 

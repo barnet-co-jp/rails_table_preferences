@@ -11,8 +11,8 @@ RSpec.describe "package entrypoint reset status feedback" do
     File.expand_path("../app/javascript/controllers/rails_table_preferences_controller.js", __dir__)
   end
 
-  let(:controller_source) { File.read(controller_source_path) }
-  let(:base_controller_source) { File.read(base_controller_source_path) }
+  let(:controller_source) { File.read(controller_source_path).gsub(/\r\n?/, "\n") }
+  let(:base_controller_source) { File.read(base_controller_source_path).gsub(/\r\n?/, "\n") }
 
   it "uses the existing reset status value when reset completes" do
     reset_body = controller_source.match(/\n\s+resetEditor\(event\) \{(?<body>.*?)\n\s+\}\n\n\s+renderEditor/m)&.[](:body)

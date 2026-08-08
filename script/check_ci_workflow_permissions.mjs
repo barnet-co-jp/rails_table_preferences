@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 
 const workflowPath = ".github/workflows/ci.yml"
-const workflowSource = readFileSync(workflowPath, "utf8")
+const workflowSource = readFileSync(workflowPath, "utf8").replace(/\r\n?/g, "\n")
 
 function assert(condition, message) {
   if (!condition) throw new Error(message)

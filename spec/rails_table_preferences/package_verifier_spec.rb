@@ -7,7 +7,7 @@ require "rexml/document"
 RSpec.describe RailsTablePreferences::PackageVerifier do
   describe "REQUIRED_PATHS" do
     it "keeps the documented package verification list synchronized" do
-      docs = File.read(repository_root.join("docs/package_verification.md"))
+      docs = File.read(repository_root.join("docs/package_verification.md")).gsub(/\r\n?/, "\n")
       required_files_section = docs.split("## Required files", 2).last
       documented_paths = required_files_section
         .match(/```text\n(?<paths>.*?)\n```/m)[:paths]

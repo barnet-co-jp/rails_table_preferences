@@ -2,7 +2,7 @@
 
 RSpec.describe "rails_table_preferences select filter option search source" do
   let(:repo_root) { File.expand_path("../..", __dir__) }
-  let(:controller_source) { File.read(File.join(repo_root, "app/javascript/rails_table_preferences/controller.js")) }
+  let(:controller_source) { File.read(File.join(repo_root, "app/javascript/rails_table_preferences/controller.js")).gsub(/\r\n?/, "\n") }
 
   it "keeps selected options visible while hiding only unmatched unselected options" do
     method_source = controller_source.match(

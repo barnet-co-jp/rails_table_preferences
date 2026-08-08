@@ -13,7 +13,7 @@
 
 まず [Quick start](quick_start.md) と [Install path options](install_paths.md) を確認します。
 
-通常の `stimulus-rails` 構成では install generator が migration、initializer、JavaScript controller、stylesheet をコピーします。
+通常の `stimulus-rails` 構成では install generator が migration、initializer、JavaScript controller、stylesheet をコピーします。editor と table の対話動作には起動済みの Stimulus application が必要で、Gemとgenerator自体はStimulusをinstall/startしません。標準構成では通常copied controllerが自動登録されますが、Stimulus未導入のappでは先に追加してください。
 
 ```bash
 bin/rails generate rails_table_preferences:install
@@ -54,7 +54,7 @@ package entrypoint は現在 JavaScript 専用です。`rails_table_preferences/
 <% end %>
 ```
 
-この既定の helper 構成では、editor helper と table helper はそれぞれ別の `rails-table-preferences` controller root を描画します。同じ `table_key` を使っていても、editor の Apply は sibling table root の DOM を自動更新しません。即時反映が必要な画面では、Save 後の reload / navigation、helper-free same-root table、または host app 側の lifecycle event handling を検討し、詳細は [Quick start](quick_start.md#5-render-the-editor-and-table) と [JavaScript controller notes](javascript_controller.md#host-app-lifecycle-events) を正本にしてください。
+この既定の helper 構成では、editor helper と table helper は別の `rails-table-preferences` controller root を描画します。Apply、Reset、Show all columns、成功したpresetのSave/Create/Load/Delete、およびpackage controllerのfilter/sort一括解除は、同じ `table_key` を持つ接続中のtable rootへ設定を即時同期します。別のeditor rootの編集中状態は上書きしません。同期は同じdocument内の接続中rootに限定され、iframe、別tab、別windowには届かず、Turbo置換でrootが切断中に発生した更新も再送されません。Turbo responseごとにserver側の最新`settings`とpreset `name`を描画してください。同期させたくないtableには別の `table_key` を使い、詳細は [Quick start](quick_start.md#5-render-the-editor-and-table) と [JavaScript controller notes](javascript_controller.md#cross-root-settings-synchronization) を正本にしてください。
 
 Active Record metadata から convention-first に始めたい場合は、`resource_table_for` / `tree_resource_table_for` と [Resource table adapters](resource_tables.md) を先に確認します。
 
