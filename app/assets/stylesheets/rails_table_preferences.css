@@ -207,17 +207,17 @@
   gap: 0.25rem;
 }
 
-.rails-table-preferences-editor__row > label:nth-of-type(2) {
+.rails-table-preferences-editor__row > .rails-table-preferences-editor__order {
   grid-column: 4;
   grid-row: 1;
 }
 
-.rails-table-preferences-editor__row > label:nth-of-type(3) {
+.rails-table-preferences-editor__row > .rails-table-preferences-editor__width {
   grid-column: 5;
   grid-row: 1;
 }
 
-.rails-table-preferences-editor__row > label:nth-of-type(4) {
+.rails-table-preferences-editor__row > .rails-table-preferences-editor__truncate {
   grid-column: 6;
   grid-row: 1;
 }
@@ -455,17 +455,17 @@ th[data-rails-table-preferences-fixed="true"] {
     margin-top: 0.25rem;
   }
 
-  .rails-table-preferences-editor__row > label:nth-of-type(2) {
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__order {
     grid-column: 1;
     grid-row: 3;
   }
 
-  .rails-table-preferences-editor__row > label:nth-of-type(3) {
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__width {
     grid-column: 2;
     grid-row: 3;
   }
 
-  .rails-table-preferences-editor__row > label:nth-of-type(4) {
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__truncate {
     grid-column: 3;
     grid-row: 3;
   }
@@ -506,17 +506,17 @@ th[data-rails-table-preferences-fixed="true"] {
     grid-row: 2;
   }
 
-  .rails-table-preferences-editor__row > label:nth-of-type(2) {
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__order {
     grid-column: 1;
     grid-row: 3;
   }
 
-  .rails-table-preferences-editor__row > label:nth-of-type(3) {
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__width {
     grid-column: 2;
     grid-row: 3;
   }
 
-  .rails-table-preferences-editor__row > label:nth-of-type(4) {
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__truncate {
     grid-column: 1 / -1;
     grid-row: 4;
   }
@@ -530,9 +530,9 @@ th[data-rails-table-preferences-fixed="true"] {
   .rails-table-preferences-editor__drag-handle,
   .rails-table-preferences-editor__row-actions,
   .rails-table-preferences-editor__visible,
-  .rails-table-preferences-editor__row > label:nth-of-type(2),
-  .rails-table-preferences-editor__row > label:nth-of-type(3),
-  .rails-table-preferences-editor__row > label:nth-of-type(4) {
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__order,
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__width,
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__truncate {
     grid-column: 1;
   }
 
@@ -544,15 +544,15 @@ th[data-rails-table-preferences-fixed="true"] {
     grid-row: 3;
   }
 
-  .rails-table-preferences-editor__row > label:nth-of-type(2) {
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__order {
     grid-row: 4;
   }
 
-  .rails-table-preferences-editor__row > label:nth-of-type(3) {
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__width {
     grid-row: 5;
   }
 
-  .rails-table-preferences-editor__row > label:nth-of-type(4) {
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__truncate {
     grid-row: 6;
   }
 }

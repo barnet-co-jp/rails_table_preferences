@@ -32,6 +32,7 @@ RSpec.describe "package entrypoint reset status feedback" do
     expect(reset_body).to include("this.closeFilterPanel()")
     expect(reset_body).to include("this.renderEditor()")
     expect(reset_body).to include("this.apply()")
+    expect(reset_body).to include("this.setStatus(this.resetStatusLabelValue)")
     expect(reset_body).not_to include("fetch(")
     expect(reset_body).not_to include("this.save")
   end

@@ -207,7 +207,23 @@ DELETE /rails_table_preferences/preferences/orders/compact
 
 Response status: `204 No Content`
 
-Deleting a missing preset is still a no-content response from the mounted controller.
+Deleting a missing preset is still a no-content response from the mounted controller. If a callback or database constraint prevents deletion, the API returns `422 Unprocessable Entity` with `error: "destroy_failed"`; the bundled editor keeps its action-specific delete failure status.
+
+## Error responses
+
+The API uses a small, stable JSON error envelope for request and persistence failures:
+
+| Status | `error` | Meaning |
+| --- | --- | --- |
+| `400 Bad Request` | `invalid_request` | The route identity is blank, including a blank `table_key`. |
+| `401 Unauthorized` | `owner_required` | An owner-scoped create, update, or delete was attempted without a configured current owner. Read-only shared/scoped preset reads remain available. |
+| `404 Not Found` | `not_found` | An explicitly requested preset does not exist. Missing deletes remain idempotent `204` responses. |
+| `422 Unprocessable Entity` | `validation_failed` | A create or update failed model validation, including duplicate names or invalid scope metadata. |
+| `422 Unprocessable Entity` | `destroy_failed` | A destroy callback or persistence constraint prevented deletion. |
+
+Validation and destroy errors include a `details` object keyed by model attribute. Clients should use `error` as the machine-readable contract and treat `message` and `details` as display/support context. Successful response payloads are unchanged.
+
+New preset names are trimmed before persistence, and name comparison remains case-sensitive. Lookup first honors an exact legacy name and then tries its trimmed form, so records created by older versions with surrounding whitespace remain loadable and deletable. Updating such a legacy record normalizes its stored name; if that collides with an existing normalized name, the API returns the standard `422 validation_failed` response instead of silently merging records.
 
 ## Request fields
 
@@ -241,6 +257,6 @@ The `scope_type` and `scope_key` fields are the storage and resolver contract fo
 
 The mounted engine inherits the configured parent controller, so host applications should protect the mounted route with the same authentication and authorization posture used for the surrounding app.
 
-The owner preset API shape above is the stable path used by the bundled editor. Non-owner scoped preset writes through the mounted JSON API are a product/security boundary under human review in [#496](https://github.com/matsuo-haruhito/rails_table_preferences/issues/496). Until that is decided, do not treat this guide as an admin API contract for creating or updating shared, role, or organization presets through the regular editor route.
+The owner preset API shape above is the stable path used by the bundled editor. The mounted API continues to accept non-owner scope parameters for backward compatibility and internal administration, but it deliberately does not implement an application-specific authorization policy. A host application that allows shared, role, or organization writes must protect the engine through its configured parent controller or expose those writes only through an authorized host-owned service/admin route. The bundled editor never sends non-owner write parameters.
 
 For shared, role, or organization preset operating patterns, keep using the guidance in [Scoped presets](scoped_presets.md): regular users save owner presets, while host applications provide an explicit admin form, service object, seed, or maintenance path for non-owner presets.

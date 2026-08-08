@@ -14,10 +14,11 @@ RSpec.describe "package editor metadata contract" do
     expect(package_controller_source).to include("this.defaultSettings ? this.mergeSettings(this.defaultSettings, editorSettings) : editorSettings")
   end
 
-  it "namespaces package filter panel ids by the editor instance when present" do
+  it "namespaces package filter panel ids by an explicit editor instance or the base controller instance" do
     expect(package_controller_source).to include("filterPanelId(columnKey)")
-    expect(package_controller_source).to include("filterPanelIdNamespace")
-    expect(package_controller_source).to include("this.editorIdPrefixValue || this.tableKeyValue || \"table\"")
+    expect(package_controller_source).to include("if (!this.editorIdPrefixValue) return super.filterPanelId(columnKey)")
+    expect(package_controller_source).to include('if (this.editorIdPrefixValue) return this.filterPanelIdSegment(this.editorIdPrefixValue, "table")')
+    expect(package_controller_source).to include('`${this.filterPanelIdSegment(this.tableKeyValue, "table")}-${this.filterPanelInstanceId}`')
     expect(editor_partial_source).to include("data-rails-table-preferences-editor-id-prefix-value=\"<%= editor_id_prefix %>\"")
   end
 end

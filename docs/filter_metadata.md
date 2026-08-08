@@ -182,9 +182,9 @@ The current sort state is saved in the neutral `sorts` array:
 }
 ```
 
-The bundled header click UI is intentionally single-sort. Each header click replaces `sorts` with either one sort entry for the clicked column or an empty array when the cycle clears the sort. The array shape is still neutral so adapters, imports, exports, and host-app customizations can read the same saved settings shape; it is not a promise that the bundled controller provides multi-column sort interactions.
+A normal header click replaces `sorts` with the clicked column, preserving the compact single-column cycle. Hold Shift while clicking a header, or while pressing Enter or Space on a focused header, to preserve other sort entries and add, reverse, or clear that column as a secondary sort. Array order is the sort priority.
 
-Host applications that need multi-sort UI should provide that interaction in their own controller or copied controller and write the resulting ordered sort entries into `settings["sorts"]`:
+For example, Shift-activating `customer_code` while `delivery_date` is already sorted produces:
 
 ```json
 {
@@ -195,9 +195,9 @@ Host applications that need multi-sort UI should provide that interaction in the
 }
 ```
 
-Rails Table Preferences can carry and adapt the ordered neutral array, but the default header click behavior only manages one active sort at a time. Use [Filter adapters](filter_adapters.md) to check whether a target adapter preserves every sort entry, such as Ransack, or deliberately reduces the array to a single sort for existing controller compatibility.
+Rails Table Preferences carries and adapts the ordered neutral array. The first entry is the primary sort; later entries are secondary sorts in priority order. Use [Filter adapters](filter_adapters.md) to check whether a target adapter preserves every sort entry, such as Ransack, or deliberately reduces the array to a single sort for existing controller compatibility.
 
-The header also receives `aria-sort` and a minimal visual indicator:
+The primary sorted header receives `aria-sort`. Every sorted header receives an `aria-description` with its one-based priority and a minimal visual indicator:
 
 - ascending: `▲`
 - descending: `▼`

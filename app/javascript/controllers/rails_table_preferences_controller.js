@@ -1,5 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
+let filterPanelInstanceSequence = 0
+
 // Applies and edits saved table display preferences for a server-rendered table.
 export default class extends Controller {
   static targets = ["editorRows", "presetName", "presetSelect", "defaultPreset", "status", "readOnlyHint"]
@@ -31,6 +33,7 @@ export default class extends Controller {
     sortAscLabel: { type: String, default: "昇順" },
     sortDescLabel: { type: String, default: "降順" },
     sortClearLabel: { type: String, default: "並び替え解除" },
+    sortPriorityLabel: { type: String, default: "並び替え優先順位" },
     deleteConfirmLabel: { type: String, default: "この保存済み設定を削除します。よろしいですか？" },
     readOnlyPresetHintLabel: { type: String, default: "この設定は直接上書きできません。保存すると個人用の新しい設定として保存されます。" },
     scopeOwnerLabel: { type: String, default: "個人" },
@@ -49,10 +52,15 @@ export default class extends Controller {
     deletingStatusLabel: { type: String, default: "設定を削除中です..." },
     deletedStatusLabel: { type: String, default: "設定を削除しました。" },
     deletingFailedStatusLabel: { type: String, default: "設定の削除を完了できませんでした。" },
+    resetStatusLabel: { type: String, default: "テーブル初期設定に戻しました。" },
+    presetListRefreshFailedStatusLabel: { type: String, default: "設定は反映されましたが、一覧を更新できませんでした。画面を再読み込みしてください。" },
     operationFailedStatusLabel: { type: String, default: "設定の操作を完了できませんでした。" }
   }
 
   connect() {
+    this.lifecycleGeneration = (this.lifecycleGeneration || 0) + 1
+    this.connected = true
+    this.filterPanelInstanceId ||= ++filterPanelInstanceSequence
     this.busy = false
     this.draggedEditorRow = null
     this.draggedTableColumnKey = null
@@ -75,6 +83,8 @@ export default class extends Controller {
   }
 
   disconnect() {
+    this.connected = false
+    this.lifecycleGeneration = (this.lifecycleGeneration || 0) + 1
     this.uninstallDocumentResizeListeners()
     this.closeFilterPanel()
   }
@@ -106,7 +116,8 @@ export default class extends Controller {
     if (event) event.preventDefault()
     this.settingsValue = this.settingsFromEditor()
 
-    await this.withBusyStatus(async () => {
+    return this.withBusyStatus(async () => {
+      const generation = this.lifecycleGeneration
       const response = await fetch(this.collectionUrlValue, {
         method: "POST",
         headers: this.jsonHeaders,
@@ -114,8 +125,9 @@ export default class extends Controller {
       })
       if (!response.ok) throw new Error(`Failed to create table preference preset: ${response.status}`)
       const payload = await response.json()
+      if (!this.lifecycleActive(generation)) return
       this.applyPreferencePayload(payload)
-      await this.refreshPresetOptions()
+      await this.refreshPresetOptionsAfterMutation(generation)
     }, {
       busyLabel: this.savingAsNewStatusLabelValue,
       successLabel: this.savedAsNewStatusLabelValue,
@@ -128,12 +140,14 @@ export default class extends Controller {
     if (!this.currentPreferenceEditable) return
     if (!this.confirmDeletePreset()) return
 
-    await this.withBusyStatus(async () => {
+    return this.withBusyStatus(async () => {
+      const generation = this.lifecycleGeneration
       const response = await fetch(this.preferenceUrl(this.currentPresetName), {
         method: "DELETE",
         headers: { "Accept": "application/json", "X-CSRF-Token": this.csrfToken }
       })
       if (!response.ok && response.status !== 204) throw new Error(`Failed to delete table preference preset: ${response.status}`)
+      if (!this.lifecycleActive(generation)) return
       this.nameValue = "default"
       this.urlValue = this.preferenceUrl("default")
       this.currentPreferenceEditable = true
@@ -144,7 +158,7 @@ export default class extends Controller {
       this.renderEditor()
       this.apply()
       this.syncPresetEditingState()
-      await this.refreshPresetOptions()
+      await this.refreshPresetOptionsAfterMutation(generation)
     }, {
       busyLabel: this.deletingStatusLabelValue,
       successLabel: this.deletedStatusLabelValue,
@@ -156,15 +170,18 @@ export default class extends Controller {
     if (event) event.preventDefault()
     if (!this.currentPreferenceEditable) return this.createPresetFromEditor()
 
-    await this.withBusyStatus(async () => {
+    return this.withBusyStatus(async () => {
+      const generation = this.lifecycleGeneration
       const response = await fetch(this.preferenceUrl(this.currentPresetName), {
         method: "PATCH",
         headers: this.jsonHeaders,
         body: JSON.stringify({ settings: this.settingsValue, default: this.defaultPresetChecked })
       })
       if (!response.ok) throw new Error(`Failed to save table preferences: ${response.status}`)
-      this.applyPreferencePayload(await response.json())
-      await this.refreshPresetOptions()
+      const payload = await response.json()
+      if (!this.lifecycleActive(generation)) return
+      this.applyPreferencePayload(payload)
+      await this.refreshPresetOptionsAfterMutation(generation)
     }, {
       busyLabel: this.savingStatusLabelValue,
       successLabel: this.savedStatusLabelValue,
@@ -179,6 +196,7 @@ export default class extends Controller {
     this.closeFilterPanel()
     this.renderEditor()
     this.apply()
+    this.setStatus(this.resetStatusLabelValue)
   }
 
   async loadPresets() {
@@ -189,13 +207,32 @@ export default class extends Controller {
 
   async refreshPresetOptions() {
     if (!this.hasPresetSelectTarget) return
+    const generation = this.lifecycleGeneration
     const payload = await this.loadPresets()
+    if (!this.lifecycleActive(generation)) return
     this.presets = payload.preferences || []
     this.renderPresetOptions()
   }
 
+  async refreshPresetOptionsAfterMutation(generation = this.lifecycleGeneration) {
+    try {
+      await this.refreshPresetOptions()
+      return true
+    } catch (error) {
+      console.error(error)
+      if (this.lifecycleActive(generation)) {
+        this.partialSuccess = { generation, message: this.presetListRefreshFailedStatusLabelValue }
+      }
+      return false
+    }
+  }
+
+  lifecycleActive(generation) {
+    return this.connected !== false && generation === this.lifecycleGeneration
+  }
+
   async refreshPresetOptionsOnConnect() {
-    await this.withBusyStatus(async () => {
+    return this.withBusyStatus(async () => {
       await this.refreshPresetOptions()
     }, {
       busyLabel: this.loadingStatusLabelValue,
@@ -277,10 +314,13 @@ export default class extends Controller {
     if (event) event.preventDefault()
     const name = this.presetSelectTarget.value || "default"
 
-    await this.withBusyStatus(async () => {
+    return this.withBusyStatus(async () => {
+      const generation = this.lifecycleGeneration
       const response = await fetch(this.preferenceUrl(name), { headers: { "Accept": "application/json" } })
       if (!response.ok) throw new Error(`Failed to load table preference preset: ${response.status}`)
-      this.applyPreferencePayload(await response.json())
+      const payload = await response.json()
+      if (!this.lifecycleActive(generation)) return
+      this.applyPreferencePayload(payload)
     }, {
       busyLabel: this.loadingStatusLabelValue,
       successLabel: this.loadedStatusLabelValue,
@@ -378,18 +418,24 @@ export default class extends Controller {
 
   async withBusyStatus(callback, { busyLabel, successLabel, errorLabel = this.operationFailedStatusLabelValue } = {}) {
     if (this.busy) return null
+    const generation = this.lifecycleGeneration
+    this.partialSuccess = null
     this.setBusyState(true)
     if (busyLabel) this.setStatus(busyLabel)
 
     try {
       const result = await callback()
-      if (successLabel) this.setStatus(successLabel)
+      if (!this.lifecycleActive(generation)) return null
+      const partialSuccessMessage = this.partialSuccess?.generation === generation ? this.partialSuccess.message : null
+      if (partialSuccessMessage) this.setStatus(partialSuccessMessage)
+      else if (successLabel) this.setStatus(successLabel)
       return result
     } catch (error) {
-      this.handleOperationError(error, errorLabel)
+      if (this.lifecycleActive(generation)) this.handleOperationError(error, errorLabel)
       return null
     } finally {
-      this.setBusyState(false)
+      if (this.lifecycleActive(generation)) this.setBusyState(false)
+      if (this.partialSuccess?.generation === generation) this.partialSuccess = null
     }
   }
 
@@ -421,9 +467,9 @@ export default class extends Controller {
         <input type="checkbox" data-field="visible" ${column.visible === false ? "" : "checked"}>
         <span>${this.escapeHtml(column.label || column.key)}</span>
       </label>
-      <label>${this.escapeHtml(this.orderLabelValue)}<input type="number" data-field="order" value="${column.order ?? ""}" inputmode="numeric"></label>
-      <label>${this.escapeHtml(this.widthLabelValue)}<input type="number" data-field="width" value="${column.width ?? ""}" inputmode="numeric"></label>
-      <label>${this.escapeHtml(this.truncateLabelValue)}<input type="number" data-field="truncate" value="${column.truncate ?? ""}" inputmode="numeric"></label>
+      <label class="rails-table-preferences-editor__order">${this.escapeHtml(this.orderLabelValue)}<input type="number" min="1" data-field="order" value="${column.order ?? ""}" inputmode="numeric"></label>
+      <label class="rails-table-preferences-editor__width">${this.escapeHtml(this.widthLabelValue)}<input type="number" min="1" data-field="width" value="${column.width ?? ""}" inputmode="numeric"></label>
+      <label class="rails-table-preferences-editor__truncate">${this.escapeHtml(this.truncateLabelValue)}<input type="number" min="1" data-field="truncate" value="${column.truncate ?? ""}" inputmode="numeric"></label>
     `
     return row
   }
@@ -718,9 +764,17 @@ export default class extends Controller {
       const column = this.columnDefinitionByKey(key)
       if (column?.sortable !== true) return
       if (cell.dataset.railsTablePreferencesSortInstalled === "true") return
+      if (cell.hasAttribute("aria-description")) {
+        cell.dataset.railsTablePreferencesHostAriaDescription = cell.getAttribute("aria-description") || ""
+      }
       cell.dataset.railsTablePreferencesSortInstalled = "true"
       cell.classList.add("rails-table-preferences-sortable-column")
+      cell.tabIndex = 0
       cell.addEventListener("click", (event) => this.toggleSortFromHeader(event, cell, column))
+      cell.addEventListener("keydown", (event) => {
+        if (!["Enter", " ", "Spacebar"].includes(event.key)) return
+        this.toggleSortFromHeader(event, cell, column)
+      })
       if (!cell.querySelector("[data-rails-table-preferences-sort-indicator]")) {
         const indicator = document.createElement("span")
         indicator.className = "rails-table-preferences-sort-indicator"
@@ -738,25 +792,53 @@ export default class extends Controller {
     if (this.shouldIgnoreHeaderAction(event.target)) return
     if (this.draggedTableColumnKey || this.resizingColumn) return
     event.preventDefault()
-    const current = this.sortFor(column.key)
-    let nextSorts = []
-    if (!current) nextSorts = [{ key: column.key, direction: "asc" }]
-    else if (current.direction === "asc") nextSorts = [{ key: column.key, direction: "desc" }]
+    const sorts = this.settingsValue?.sorts || []
+    const currentIndex = sorts.findIndex((sort) => sort.key === column.key)
+    const current = currentIndex >= 0 ? sorts[currentIndex] : undefined
+    let nextSorts
+    if (!event.shiftKey) {
+      if (!current) nextSorts = [{ key: column.key, direction: "asc" }]
+      else if (current.direction === "asc") nextSorts = [{ key: column.key, direction: "desc" }]
+      else nextSorts = []
+    } else if (!current) {
+      nextSorts = [...sorts, { key: column.key, direction: "asc" }]
+    } else if (current.direction === "asc") {
+      nextSorts = sorts.map((sort, index) => index === currentIndex ? { ...sort, direction: "desc" } : sort)
+    } else {
+      nextSorts = sorts.filter((_sort, index) => index !== currentIndex)
+    }
     this.settingsValue = { ...this.settingsValue, sorts: nextSorts }
     this.syncSortStates()
   }
 
   syncSortStates() {
+    const sorts = this.settingsValue?.sorts || []
     this.headerCells.forEach((cell) => {
       const key = cell.dataset.railsTablePreferencesColumnKey
-      const sort = this.sortFor(key)
+      const sortIndex = sorts.findIndex((sort) => sort.key === key)
+      const sort = sortIndex >= 0 ? sorts[sortIndex] : undefined
       const indicator = cell.querySelector("[data-rails-table-preferences-sort-indicator]")
       cell.classList.toggle("rails-table-preferences-sortable-column--sorted", Boolean(sort))
-      cell.setAttribute("aria-sort", sort?.direction === "asc" ? "ascending" : sort?.direction === "desc" ? "descending" : "none")
+      if (cell.dataset.railsTablePreferencesSortInstalled === "true" && sortIndex === 0) {
+        cell.setAttribute("aria-sort", sort.direction === "asc" ? "ascending" : "descending")
+      } else {
+        cell.removeAttribute("aria-sort")
+      }
+      if (cell.dataset.railsTablePreferencesSortInstalled === "true") {
+        const hostDescription = cell.dataset.railsTablePreferencesHostAriaDescription
+        if (sortIndex >= 0) {
+          const priorityDescription = `${this.sortPriorityLabelValue}: ${sortIndex + 1}`
+          cell.setAttribute("aria-description", hostDescription ? `${hostDescription}; ${priorityDescription}` : priorityDescription)
+        } else if (hostDescription !== undefined) {
+          cell.setAttribute("aria-description", hostDescription)
+        } else {
+          cell.removeAttribute("aria-description")
+        }
+      }
       if (indicator) indicator.textContent = sort?.direction === "asc" ? "▲" : sort?.direction === "desc" ? "▼" : ""
       if (cell.dataset.railsTablePreferencesSortInstalled === "true") {
         const label = sort?.direction === "asc" ? this.sortDescLabelValue : sort?.direction === "desc" ? this.sortClearLabelValue : this.sortAscLabelValue
-        cell.title = label
+        cell.title = sortIndex >= 0 ? `${label} (${this.sortPriorityLabelValue}: ${sortIndex + 1})` : label
       }
     })
   }
@@ -860,7 +942,8 @@ export default class extends Controller {
     const filter = column.filter || {}
     const condition = this.filterConditionFor(column.key)
     const operators = this.filterOperatorsFor(filter)
-    const selectedOperator = condition.operator || operators[0] || "contains"
+    const requestedOperator = condition.operator || operators[0] || "contains"
+    const selectedOperator = operators.includes(requestedOperator) ? requestedOperator : (operators[0] || "contains")
     return `
       <div class="rails-table-preferences-filter-panel__title">${this.escapeHtml(column.label || column.key)}</div>
       <label class="rails-table-preferences-filter-panel__field">
@@ -963,9 +1046,15 @@ export default class extends Controller {
   }
 
   filterPanelId(columnKey) {
-    const tableKey = (this.tableKeyValue || "table").replace(/[^a-zA-Z0-9_-]+/g, "-")
-    const normalizedColumnKey = String(columnKey || "column").replace(/[^a-zA-Z0-9_-]+/g, "-")
-    return `rails-table-preferences-filter-panel-${tableKey}-${normalizedColumnKey}`
+    const tableKey = this.filterPanelIdSegment(this.tableKeyValue, "table")
+    const normalizedColumnKey = this.filterPanelIdSegment(columnKey, "column")
+    return `rails-table-preferences-filter-panel-${tableKey}-${this.filterPanelInstanceId}-${normalizedColumnKey}`
+  }
+
+  filterPanelIdSegment(value, fallback) {
+    const text = String(value || fallback)
+    const encoded = encodeURIComponent(text)
+    return `${encoded.length}_${encoded}`
   }
 
   applyFilterPanel(key, panel) {
@@ -982,7 +1071,7 @@ export default class extends Controller {
       else if (draftCondition.value) condition.value = draftCondition.value
     }
     this.updateFilterCondition(key, condition)
-    this.closeFilterPanel()
+    this.closeFilterPanel({ returnFocus: true })
     this.apply()
   }
 
@@ -991,7 +1080,7 @@ export default class extends Controller {
     const filters = { ...(this.settingsValue?.filters || {}) }
     delete filters[key]
     this.settingsValue = { ...this.settingsValue, filters }
-    this.closeFilterPanel()
+    this.closeFilterPanel({ returnFocus: true })
     this.apply()
   }
 
@@ -1123,9 +1212,9 @@ export default class extends Controller {
       return {
         key,
         visible: row.querySelector('[data-field="visible"]')?.checked ?? true,
-        order: this.integerValue(row.querySelector('[data-field="order"]')?.value) ?? current.order ?? (index + 1) * 10,
-        width: this.integerValue(row.querySelector('[data-field="width"]')?.value),
-        truncate: this.integerValue(row.querySelector('[data-field="truncate"]')?.value),
+        order: this.positiveIntegerValue(row.querySelector('[data-field="order"]')?.value) ?? this.positiveIntegerValue(current.order) ?? (index + 1) * 10,
+        width: this.positiveIntegerValue(row.querySelector('[data-field="width"]')?.value),
+        truncate: this.positiveIntegerValue(row.querySelector('[data-field="truncate"]')?.value),
         pinned: current.pinned === true
       }
     })
@@ -1153,6 +1242,10 @@ export default class extends Controller {
       }
       delete cell.dataset.railsTablePreferencesTruncate
       delete cell.dataset.railsTablePreferencesOverflow
+      if (cell.dataset.railsTablePreferencesAutoTitle === "true") {
+        cell.removeAttribute("title")
+        delete cell.dataset.railsTablePreferencesAutoTitle
+      }
       if (column.width) {
         cell.style.width = `${column.width}px`
         cell.style.maxWidth = `${column.width}px`
@@ -1188,7 +1281,10 @@ export default class extends Controller {
         cell.style.overflow = "hidden"
         cell.style.textOverflow = "ellipsis"
         cell.style.whiteSpace = "nowrap"
-        if (!cell.title) cell.title = cell.textContent.trim()
+        if (!cell.title) {
+          cell.title = cell.textContent.trim()
+          cell.dataset.railsTablePreferencesAutoTitle = "true"
+        }
     }
   }
 
@@ -1287,10 +1383,17 @@ export default class extends Controller {
     return Number.isFinite(Number(column.order)) ? Number(column.order) : Number.MAX_SAFE_INTEGER
   }
 
+  positiveIntegerValue(value) {
+    const integer = this.integerValue(value)
+    return integer !== null && integer > 0 ? integer : null
+  }
+
   integerValue(value) {
-    if (value === undefined || value === null || value === "") return null
-    const integer = Number.parseInt(value, 10)
-    return Number.isNaN(integer) ? null : integer
+    if (value === undefined || value === null) return null
+    const text = String(value).trim()
+    if (!/^-?\d+$/.test(text)) return null
+    const integer = Number(text)
+    return Number.isSafeInteger(integer) ? integer : null
   }
 
   escapeHtml(value) {

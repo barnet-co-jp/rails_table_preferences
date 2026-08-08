@@ -228,7 +228,7 @@ RSpec.describe "RailsTablePreferences::Preferences", type: :request do
         settings: { columns: [] }
       }
 
-      expect(response).to have_http_status(:internal_server_error)
+      expect(response).to have_http_status(:unprocessable_entity)
       expect(existing.reload.default_flag).to eq(true)
       expect(RailsTablePreferences::Preference.find_for(user: user, table_key: "orders", name: "inspection")).to be_nil
     end
@@ -312,7 +312,7 @@ RSpec.describe "RailsTablePreferences::Preferences", type: :request do
         settings: { columns: [] }
       }
 
-      expect(response).to have_http_status(:internal_server_error)
+      expect(response).to have_http_status(:unprocessable_entity)
       expect(existing.reload.default_flag).to eq(true)
       expect(target.reload.default_flag).to eq(false)
     end
@@ -332,5 +332,168 @@ RSpec.describe "RailsTablePreferences::Preferences", type: :request do
       expect(response).to have_http_status(:no_content)
       expect(RailsTablePreferences::Preference.find_for(user: user, table_key: "orders", name: "inspection")).to be_nil
     end
+  end
+end
+
+RSpec.describe "RailsTablePreferences::Preferences error contract", type: :request do
+  let(:user) { User.create!(name: "User 1") }
+
+  before do
+    Thread.current[:rails_table_preferences_current_user] = user
+  end
+
+  it "returns a JSON validation error for duplicate preset names" do
+    RailsTablePreferences::Preference.create!(
+      user: user,
+      table_key: "orders",
+      name: "inspection",
+      settings: { "columns" => [] }
+    )
+
+    post "/rails_table_preferences/preferences/orders", params: {
+      name: "inspection",
+      settings: { columns: [] }
+    }
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(JSON.parse(response.body)).to include(
+      "error" => "validation_failed",
+      "message" => "Preference could not be saved"
+    )
+  end
+
+  it "normalizes surrounding whitespace in preset names" do
+    post "/rails_table_preferences/preferences/orders", params: {
+      name: "  inspection  ",
+      settings: { columns: [] }
+    }
+
+    expect(response).to have_http_status(:created)
+    expect(JSON.parse(response.body)["name"]).to eq("inspection")
+    expect(RailsTablePreferences::Preference.find_for(user: user, table_key: "orders", name: " inspection ")).to be_present
+  end
+
+  it "loads and normalizes an exact legacy whitespace name" do
+    legacy = RailsTablePreferences::Preference.create!(
+      user: user,
+      table_key: "orders",
+      name: "legacy",
+      settings: { "columns" => [{ "key" => "legacy_column" }] }
+    )
+    legacy.update_column(:name, " legacy inspection ")
+
+    get "/rails_table_preferences/preferences/orders/%20legacy%20inspection%20"
+
+    expect(response).to have_http_status(:ok)
+    expect(JSON.parse(response.body)).to include(
+      "name" => " legacy inspection ",
+      "settings" => include("columns" => [include("key" => "legacy_column")])
+    )
+
+    patch "/rails_table_preferences/preferences/orders/%20legacy%20inspection%20", params: {
+      settings: { columns: [{ key: "updated_column" }] }
+    }
+
+    expect(response).to have_http_status(:ok)
+    expect(legacy.reload.name).to eq("legacy inspection")
+  end
+
+  it "deletes an exact legacy whitespace name without orphaning it" do
+    legacy = RailsTablePreferences::Preference.create!(
+      user: user,
+      table_key: "orders",
+      name: "remove-me",
+      settings: { "columns" => [] }
+    )
+    legacy.update_column(:name, " remove me ")
+
+    delete "/rails_table_preferences/preferences/orders/%20remove%20me%20"
+
+    expect(response).to have_http_status(:no_content)
+    expect(RailsTablePreferences::Preference.where(id: legacy.id)).not_to exist
+  end
+
+  it "returns validation failure instead of merging colliding legacy and normalized names" do
+    normalized = RailsTablePreferences::Preference.create!(
+      user: user,
+      table_key: "orders",
+      name: "inspection",
+      settings: { "columns" => [{ "key" => "normalized" }] }
+    )
+    legacy = RailsTablePreferences::Preference.create!(
+      user: user,
+      table_key: "orders",
+      name: "legacy",
+      settings: { "columns" => [{ "key" => "legacy" }] }
+    )
+    legacy.update_column(:name, " inspection ")
+
+    get "/rails_table_preferences/preferences/orders/%20inspection%20"
+    expect(response).to have_http_status(:ok)
+    expect(JSON.parse(response.body).dig("settings", "columns", 0, "key")).to eq("legacy")
+
+    patch "/rails_table_preferences/preferences/orders/%20inspection%20", params: { settings: { columns: [] } }
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(JSON.parse(response.body)["error"]).to eq("validation_failed")
+    expect(legacy.reload.name).to eq(" inspection ")
+    expect(normalized.reload.name).to eq("inspection")
+  end
+
+  it "requires a current owner for owner preset writes" do
+    Thread.current[:rails_table_preferences_current_user] = nil
+
+    post "/rails_table_preferences/preferences/orders", params: {
+      name: "inspection",
+      settings: { columns: [] }
+    }
+
+    expect(response).to have_http_status(:unauthorized)
+    expect(JSON.parse(response.body)).to eq(
+      "error" => "owner_required",
+      "message" => "A current owner is required for owner preset writes"
+    )
+  end
+
+  it "keeps shared presets readable without a current owner" do
+    Thread.current[:rails_table_preferences_current_user] = nil
+    RailsTablePreferences::Preference.create!(
+      scope_type: "shared",
+      table_key: "orders",
+      name: "shared-view",
+      settings: { "columns" => [] }
+    )
+
+    get "/rails_table_preferences/preferences/orders"
+
+    expect(response).to have_http_status(:ok)
+    expect(JSON.parse(response.body)["preferences"].map { |preference| preference["name"] }).to eq(["shared-view"])
+  end
+
+  it "returns a JSON error when a destroy callback prevents deletion" do
+    preference = RailsTablePreferences::Preference.create!(
+      user: user,
+      table_key: "orders",
+      name: "inspection",
+      settings: { "columns" => [] }
+    )
+    preference.errors.add(:base, "forced failure")
+    allow(RailsTablePreferences::Preference).to receive(:find_for).and_return(preference)
+    allow(preference).to receive(:destroy!).and_raise(ActiveRecord::RecordNotDestroyed.new("forced failure", preference))
+
+    delete "/rails_table_preferences/preferences/orders/inspection"
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(JSON.parse(response.body)).to include(
+      "error" => "destroy_failed",
+      "message" => "Preference could not be deleted"
+    )
+    expect(preference.reload).to be_persisted
+  end
+
+  it "keeps deleting a missing preset idempotent" do
+    delete "/rails_table_preferences/preferences/orders/missing"
+
+    expect(response).to have_http_status(:no_content)
   end
 end
