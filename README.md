@@ -749,7 +749,7 @@ PUT    /rails_table_preferences/preferences/:table_key/:name
 DELETE /rails_table_preferences/preferences/:table_key/:name
 ```
 
-`name` is optional for single-preset operations and defaults to `default`. `POST` accepts `name`, `scope_type`, `scope_key`, `settings`, and optional `default`. `PATCH` and `PUT` also accept optional `default` to mark a preset as the default for that table and scope.
+`name` in the `POST` body is optional and defaults to `default`. Show, update, and delete routes require `:name` in the path. The mounted API accepts writes only for owner presets: omit `scope_type` or send `scope_type: "owner"`. `POST` accepts `name`, `settings`, and optional `default`; `PATCH` and `PUT` also accept optional `default`. Manage shared, role, and organization presets through a host-app-owned admin service, seed, or maintenance path as described in [Scoped presets](docs/scoped_presets.md).
 
 Example request body:
 

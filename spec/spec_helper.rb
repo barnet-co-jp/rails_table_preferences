@@ -29,8 +29,14 @@ ActiveRecord::Schema.define do
     t.timestamps
   end
 
+  create_table :members, force: true do |t|
+    t.string :name
+    t.timestamps
+  end
+
   create_table :table_preferences, force: true do |t|
     t.references :user, null: true
+    t.references :member, null: true
     t.string :scope_type, null: false, default: "owner"
     t.string :scope_key, null: false, default: ""
     t.string :table_key, null: false
@@ -44,6 +50,9 @@ ActiveRecord::Schema.define do
 end
 
 class User < ActiveRecord::Base
+end
+
+class Member < ActiveRecord::Base
 end
 
 module GeneratorSpecHelpers
@@ -82,6 +91,7 @@ RSpec.configure do |config|
     RailsTablePreferences::Preference.table_name = RailsTablePreferences.configuration.table_name
     RailsTablePreferences::Preference.delete_all
     User.delete_all
+    Member.delete_all
     Thread.current[:rails_table_preferences_current_user] = nil
     Thread.current[:rails_table_preferences_scope_context] = nil
   end

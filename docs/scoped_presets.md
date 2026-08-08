@@ -326,7 +326,7 @@ Why this shape works:
 - `RailsTablePreferences::SettingsNormalizer.call(...)` keeps admin-created payloads aligned with the same normalized `columns` / `filters` / `sorts` shape used by the bundled JSON API.
 - `default_flag` clearing stays per table + scope so only one default wins inside the same scope bucket.
 
-If your host app deliberately builds a protected admin endpoint that uses the mounted JSON API request shape instead of direct model writes, keep that endpoint outside the normal user-facing editor flow and use the same parameter shape shown above. The important part is to keep the stored `scope_type`, `scope_key`, and normalized `settings` consistent while the host app owns authorization and tenant policy.
+The mounted JSON API rejects non-owner writes. Build protected administration on top of a host-owned service such as the example above, direct model writes, seeds, or maintenance tasks. Keep the stored `scope_type`, `scope_key`, and normalized `settings` consistent while the host app owns authorization and tenant policy.
 
 ### 3. Split the regular editor and the admin flow on purpose
 

@@ -3,7 +3,7 @@
 module RailsTablePreferences
   class PreferencesController < ApplicationController
     before_action :validate_table_key!
-    before_action :require_owner_for_owner_write!, only: %i[create update destroy]
+    before_action :require_owner_write_scope!, only: %i[create update destroy]
 
     rescue_from ActiveRecord::RecordInvalid, with: :render_validation_failure
     rescue_from ActiveRecord::RecordNotDestroyed, with: :render_destroy_failure
@@ -145,8 +145,14 @@ module RailsTablePreferences
       render json: { error: "invalid_request", message: "table_key is required" }, status: :bad_request
     end
 
-    def require_owner_for_owner_write!
-      return unless scope_type_param == Preference::OWNER_SCOPE_TYPE
+    def require_owner_write_scope!
+      unless scope_type_param == Preference::OWNER_SCOPE_TYPE
+        render json: {
+          error: "owner_scope_required",
+          message: "The mounted API only supports owner preset writes"
+        }, status: :forbidden
+        return
+      end
       return if table_preferences_current_user.present?
 
       render json: { error: "owner_required", message: "A current owner is required for owner preset writes" }, status: :unauthorized
@@ -201,8 +207,10 @@ module RailsTablePreferences
     end
 
     def clear_other_defaults(preference)
+      owner_foreign_key = RailsTablePreferences.configuration.user_foreign_key
+
       Preference.for_scope(preference.scope_type, preference.scope_key)
-                .where(RailsTablePreferences.configuration.user_foreign_key => preference.user_id)
+                .where(owner_foreign_key => preference[owner_foreign_key])
                 .for_table(preference.table_key)
                 .where.not(id: preference.id)
                 .update_all(default_flag: false)

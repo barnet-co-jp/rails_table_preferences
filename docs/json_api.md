@@ -4,7 +4,7 @@ Rails Table Preferences exposes a small JSON API from the mounted engine. The bu
 
 Use this guide when a host app copies the bundled UI, writes integration tests around the mounted engine, or needs to understand the owner preset payload shape. The host app still owns authentication, authorization, routing around the mounted engine, and any business-specific query behavior.
 
-For non-owner scoped preset management, use this page to understand the request and response shape, then follow [Scoped presets](scoped_presets.md#minimal-operating-patterns) for the host-app-owned seed, admin form, service object, or maintenance path. The regular editor route remains the owner-preset path for normal users; shared, role, and organization write policy belongs to the host application.
+The mounted API accepts writes only for owner presets. For non-owner scoped preset management, follow [Scoped presets](scoped_presets.md#minimal-operating-patterns) and use a host-app-owned seed, admin form, service object, or maintenance path. List and normal named/default resolution only return non-owner presets made available by the current scope context. An explicitly scoped read addresses the requested stored scope directly, so host applications that expose that form must authorize it through the configured parent controller.
 
 ## Route shape
 
@@ -217,6 +217,7 @@ The API uses a small, stable JSON error envelope for request and persistence fai
 | --- | --- | --- |
 | `400 Bad Request` | `invalid_request` | The route identity is blank, including a blank `table_key`. |
 | `401 Unauthorized` | `owner_required` | An owner-scoped create, update, or delete was attempted without a configured current owner. Read-only shared/scoped preset reads remain available. |
+| `403 Forbidden` | `owner_scope_required` | A mounted API write requested a shared, role, or organization scope. Use a host-owned admin service, seed, or maintenance path instead. |
 | `404 Not Found` | `not_found` | An explicitly requested preset does not exist. Missing deletes remain idempotent `204` responses. |
 | `422 Unprocessable Entity` | `validation_failed` | A create or update failed model validation, including duplicate names or invalid scope metadata. |
 | `422 Unprocessable Entity` | `destroy_failed` | A destroy callback or persistence constraint prevented deletion. |
@@ -233,12 +234,12 @@ New preset names are trimmed before persistence, and name comparison remains cas
 | `preference_name` | create/update body | Backward-compatible alias for `name`. |
 | `default` | create/update body | Boolean. When true, other defaults in the same table/scope are cleared. |
 | `settings` | create/update body | Preference settings payload. It is normalized before persistence. |
-| `scope_type` | create/update/show/delete query or body params | Scope bucket. Defaults to `owner` when omitted. |
-| `scope_key` | create/update/show/delete query or body params | Scope identifier for role or organization presets. Empty for owner and shared presets. |
+| `scope_type` | create/update/show/delete query or body params | Defaults to `owner`. Writes reject any other value; reads may use a non-owner scope to request a specific preset. |
+| `scope_key` | show query param | Scope identifier for an explicitly scoped role or organization read. It is not accepted as a non-owner write path. |
 
-For owner presets, do not send `scope_type` or send `"owner"`. The controller writes the preference against the configured current owner.
+For owner writes, omit `scope_type` or send `"owner"`. The controller writes the preference against the configured current owner. A write with `scope_type` set to `shared`, `role`, or `organization` returns `403 Forbidden` with `error: "owner_scope_required"`.
 
-The `scope_type` and `scope_key` fields are the storage and resolver contract for non-owner presets, but they are not an authorization policy. When a host app uses them for shared, role, or organization presets, keep the write path outside the normal editor flow and protect it with app-specific admin authorization. Use the same parameter shape in seeds, internal forms, service objects, or maintenance scripts so admin-created records stay compatible with the resolver and list response.
+The `scope_type` and `scope_key` fields remain the storage and resolver contract for non-owner presets. Create and maintain those records through host-owned seeds, internal forms, service objects, or maintenance scripts so application-specific authorization and tenant rules remain explicit.
 
 ## Response fields
 
@@ -257,6 +258,8 @@ The `scope_type` and `scope_key` fields are the storage and resolver contract fo
 
 The mounted engine inherits the configured parent controller, so host applications should protect the mounted route with the same authentication and authorization posture used for the surrounding app.
 
-The owner preset API shape above is the stable path used by the bundled editor. The mounted API continues to accept non-owner scope parameters for backward compatibility and internal administration, but it deliberately does not implement an application-specific authorization policy. A host application that allows shared, role, or organization writes must protect the engine through its configured parent controller or expose those writes only through an authorized host-owned service/admin route. The bundled editor never sends non-owner write parameters.
+The owner preset API shape above is the stable write path used by the bundled editor. The mounted API rejects shared, role, and organization writes with `403 Forbidden`. This makes the mounted route safe from non-owner mutation without requiring parameter-aware write authorization in the parent controller.
 
-For shared, role, or organization preset operating patterns, keep using the guidance in [Scoped presets](scoped_presets.md): regular users save owner presets, while host applications provide an explicit admin form, service object, seed, or maintenance path for non-owner presets.
+List and normal named/default resolution apply the configured scope context. Explicitly scoped reads address the requested stored scope directly and therefore still require host-app authorization through the configured parent controller when exposed to untrusted callers.
+
+For shared, role, or organization preset operating patterns, keep using the guidance in [Scoped presets](scoped_presets.md): regular users save owner presets, while host applications provide an explicitly authorized admin form, service object, seed, or maintenance path for non-owner presets.

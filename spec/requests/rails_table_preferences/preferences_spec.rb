@@ -165,23 +165,26 @@ RSpec.describe "RailsTablePreferences::Preferences", type: :request do
       expect(preference.settings["columns"].first["key"]).to eq("customer_code")
     end
 
-    it "creates a shared preference when requested" do
+    it "rejects non-owner preference writes" do
       post "/rails_table_preferences/preferences/orders", params: {
         name: "team-default",
         scope_type: "shared",
         settings: { columns: [] }
       }
 
-      expect(response).to have_http_status(:created)
-      preference = RailsTablePreferences::Preference.find_for(
-        user: user,
-        table_key: "orders",
-        name: "team-default",
-        scope_type: "shared"
+      expect(response).to have_http_status(:forbidden)
+      expect(JSON.parse(response.body)).to eq(
+        "error" => "owner_scope_required",
+        "message" => "The mounted API only supports owner preset writes"
       )
-      expect(preference).to be_present
-      expect(preference.user).to be_nil
-      expect(preference.scope_type).to eq("shared")
+      expect(
+        RailsTablePreferences::Preference.find_for(
+          user: user,
+          table_key: "orders",
+          name: "team-default",
+          scope_type: "shared"
+        )
+      ).to be_nil
     end
 
     it "clears other default flags in the same scope when creating a new default" do
@@ -202,6 +205,53 @@ RSpec.describe "RailsTablePreferences::Preferences", type: :request do
       expect(response).to have_http_status(:created)
       expect(existing.reload.default_flag).to eq(false)
       expect(RailsTablePreferences::Preference.find_for(user: user, table_key: "orders", name: "inspection").default_flag).to eq(true)
+    end
+
+    it "clears other default flags with a configured owner foreign key" do
+      original_preference_class = RailsTablePreferences.send(:remove_const, :Preference)
+      RailsTablePreferences.configuration.owner_model = :members
+      load File.expand_path("../../../app/models/rails_table_preferences/preference.rb", __dir__)
+
+      member = Member.create!(name: "Member 1")
+      other_member = Member.create!(name: "Member 2")
+      Thread.current[:rails_table_preferences_current_user] = member
+
+      existing = RailsTablePreferences::Preference.create!(
+        user: member,
+        table_key: "orders",
+        name: "default",
+        default_flag: true,
+        settings: { "columns" => [] }
+      )
+      other_owner_default = RailsTablePreferences::Preference.create!(
+        user: other_member,
+        table_key: "orders",
+        name: "default",
+        default_flag: true,
+        settings: { "columns" => [] }
+      )
+
+      post "/rails_table_preferences/preferences/orders", params: {
+        name: "inspection",
+        default: true,
+        settings: { columns: [] }
+      }
+
+      expect(response).to have_http_status(:created)
+      expect(existing.reload.default_flag).to eq(false)
+      expect(other_owner_default.reload.default_flag).to eq(true)
+      expect(
+        RailsTablePreferences::Preference.find_for(
+          user: member,
+          table_key: "orders",
+          name: "inspection"
+        ).default_flag
+      ).to eq(true)
+    ensure
+      if defined?(original_preference_class) && original_preference_class
+        RailsTablePreferences.send(:remove_const, :Preference) if RailsTablePreferences.const_defined?(:Preference, false)
+        RailsTablePreferences.const_set(:Preference, original_preference_class)
+      end
     end
 
     it "keeps the existing owner default when creating a new default fails" do
@@ -289,32 +339,44 @@ RSpec.describe "RailsTablePreferences::Preferences", type: :request do
       expect(target.reload.default_flag).to eq(true)
     end
 
-    it "keeps the existing shared default when updating a shared default fails" do
+    it "rejects non-owner preference updates" do
       existing = RailsTablePreferences::Preference.create!(
         scope_type: "shared",
         table_key: "orders",
-        name: "default",
-        default_flag: true,
-        settings: { "columns" => [] }
-      )
-      target = RailsTablePreferences::Preference.create!(
-        scope_type: "shared",
-        table_key: "orders",
         name: "inspection",
-        settings: { "columns" => [] }
+        settings: { "columns" => [{ "key" => "original" }] }
       )
-      allow(RailsTablePreferences::Preference).to receive(:find_or_initialize_for).and_return(target)
-      allow(target).to receive(:save!).and_raise(force_record_invalid(target))
 
       patch "/rails_table_preferences/preferences/orders/inspection", params: {
         scope_type: "shared",
         default: true,
-        settings: { columns: [] }
+        settings: { columns: [{ key: "changed" }] }
       }
 
-      expect(response).to have_http_status(:unprocessable_entity)
-      expect(existing.reload.default_flag).to eq(true)
-      expect(target.reload.default_flag).to eq(false)
+      expect(response).to have_http_status(:forbidden)
+      expect(JSON.parse(response.body)["error"]).to eq("owner_scope_required")
+      expect(existing.reload.default_flag).to eq(false)
+      expect(existing.settings["columns"].first["key"]).to eq("original")
+    end
+
+    it "rejects non-owner preference updates through PUT" do
+      existing = RailsTablePreferences::Preference.create!(
+        scope_type: "role",
+        scope_key: "admin",
+        table_key: "orders",
+        name: "inspection",
+        settings: { "columns" => [{ "key" => "original" }] }
+      )
+
+      put "/rails_table_preferences/preferences/orders/inspection", params: {
+        scope_type: "role",
+        scope_key: "admin",
+        settings: { columns: [{ key: "changed" }] }
+      }
+
+      expect(response).to have_http_status(:forbidden)
+      expect(JSON.parse(response.body)["error"]).to eq("owner_scope_required")
+      expect(existing.reload.settings["columns"].first["key"]).to eq("original")
     end
   end
 
@@ -331,6 +393,21 @@ RSpec.describe "RailsTablePreferences::Preferences", type: :request do
 
       expect(response).to have_http_status(:no_content)
       expect(RailsTablePreferences::Preference.find_for(user: user, table_key: "orders", name: "inspection")).to be_nil
+    end
+
+    it "rejects non-owner preference deletes" do
+      existing = RailsTablePreferences::Preference.create!(
+        scope_type: "shared",
+        table_key: "orders",
+        name: "inspection",
+        settings: { "columns" => [] }
+      )
+
+      delete "/rails_table_preferences/preferences/orders/inspection", params: { scope_type: "shared" }
+
+      expect(response).to have_http_status(:forbidden)
+      expect(JSON.parse(response.body)["error"]).to eq("owner_scope_required")
+      expect(existing.reload).to be_persisted
     end
   end
 end

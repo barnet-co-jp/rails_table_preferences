@@ -93,6 +93,8 @@ Until v0.1.0 is tagged, the detailed entries in this section are the temporary s
 
 ### Fixed
 
+- Default preset writes now use the configured owner foreign key instead of assuming `user_id`, so custom owner models and foreign keys can mark presets as default.
+- The mounted JSON API now rejects shared, role, and organization preset writes; non-owner administration stays in host-owned services, seeds, or maintenance paths.
 - Engine routes accept `table_key` values containing dots without treating the suffix as a response format.
 - Generator task loading works when the gem is used from a host Rails app.
 - Generated migration index names avoid database identifier length issues.
