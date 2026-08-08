@@ -3,7 +3,9 @@
 /_yardoc/
 /coverage/
 /doc/
+/log/
 /pkg/
+/spec/tmp/
 /tmp/
 *.gem
 Gemfile.lock
