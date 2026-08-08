@@ -56,7 +56,7 @@ Saved settings should remain gem-neutral:
 
 The saved format should not use Ransack predicates, Datagrid filter names, Filterrific scope names, or application-specific SQL concepts directly.
 
-The `sorts` array is ordered neutral state. A host app custom or copied controller may write multiple entries into that array, and adapters should either preserve the order when the target search layer accepts multi-sort input or clearly reduce it to the target layer's supported shape. The bundled table-header click UI remains single-sort; it does not create the second entry shown above.
+The `sorts` array is ordered neutral state. The bundled table-header UI keeps the default click cycle single-column, and Shift+click or Shift+Enter/Space preserves the other entries while adding, reversing, or clearing the selected column. Adapters should preserve that order when the target search layer accepts multi-sort input or clearly reduce it to the target layer's supported shape.
 
 ## Ransack adapter
 

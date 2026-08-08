@@ -48,16 +48,22 @@ module RailsTablePreferences
       relation
     end
 
-    before_validation :set_default_name, :set_default_settings, :set_default_scope_type, :set_default_scope_key
+    before_validation :normalize_name, :set_default_name, :set_default_settings, :set_default_scope_type, :set_default_scope_key
 
     def self.find_for(user:, table_key:, name: "default", scope_type: OWNER_SCOPE_TYPE, scope_key: nil)
       relation = for_scope(scope_type, scope_key).where(RailsTablePreferences.configuration.user_foreign_key => scope_type.to_s == OWNER_SCOPE_TYPE ? user : nil)
-      relation.for_table(table_key).find_by(name: name.to_s)
+      table_relation = relation.for_table(table_key)
+      raw_name, normalized_name = lookup_names(name)
+      table_relation.find_by(name: raw_name) || (table_relation.find_by(name: normalized_name) unless normalized_name == raw_name)
     end
 
     def self.find_or_initialize_for(user:, table_key:, name: "default", scope_type: OWNER_SCOPE_TYPE, scope_key: nil)
       relation = for_scope(scope_type, scope_key).where(RailsTablePreferences.configuration.user_foreign_key => scope_type.to_s == OWNER_SCOPE_TYPE ? user : nil)
-      relation.for_table(table_key).find_or_initialize_by(name: name.to_s)
+      table_relation = relation.for_table(table_key)
+      raw_name, normalized_name = lookup_names(name)
+      table_relation.find_by(name: raw_name) ||
+        (table_relation.find_by(name: normalized_name) unless normalized_name == raw_name) ||
+        table_relation.new(name: normalized_name)
     end
 
     def self.default_for(user:, table_key:, scope_context: {})
@@ -65,7 +71,18 @@ module RailsTablePreferences
     end
 
     def self.available_named_preference(user:, table_key:, name:, scope_context: {})
-      available_to(user: user, scope_context: scope_context).for_table(table_key).where(name: name.to_s).order(Arel.sql(scope_priority_case), :name).first
+      raw_name, normalized_name = lookup_names(name)
+      exact_name_order = connection.quote(raw_name)
+      available_to(user: user, scope_context: scope_context)
+        .for_table(table_key)
+        .where(name: [raw_name, normalized_name].uniq)
+        .order(Arel.sql(scope_priority_case), Arel.sql("CASE WHEN name = #{exact_name_order} THEN 0 ELSE 1 END"), :name)
+        .first
+    end
+
+    def self.lookup_names(name)
+      raw_name = name.to_s
+      [raw_name, raw_name.strip.presence || "default"]
     end
 
     def shared?
@@ -107,6 +124,10 @@ module RailsTablePreferences
     end
 
     private
+
+    def normalize_name
+      self.name = name.to_s.strip if name
+    end
 
     def set_default_name
       self.name = "default" if name.blank?

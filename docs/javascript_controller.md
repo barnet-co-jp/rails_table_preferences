@@ -17,8 +17,8 @@ The default controller currently handles:
 - text truncation application
 - filter button and filter panel UI
 - saved filter condition updates
-- single-sort header click UI
-- sort indicators and `aria-sort`
+- sortable header click UI with Shift-modified secondary sorting
+- visible sort indicators, primary `aria-sort`, and sort-priority descriptions
 
 ## Event boundaries
 
@@ -122,9 +122,9 @@ The analytics provider, event naming, export preview refresh, and any surroundin
 
 ## Bundled sort boundary
 
-The bundled header click UI manages one active sort at a time. A sortable header click cycles the clicked column through ascending, descending, and clear, then replaces `settingsValue.sorts` with a one-item array or an empty array.
+A normal bundled header activation manages one active sort at a time. Click, Enter, or Space cycles the activated column through ascending, descending, and clear, replacing `settingsValue.sorts` with a one-item array or an empty array.
 
-The saved settings shape remains an array so adapters and host-app customizations can share the same neutral format. Host applications that need multi-column sort interactions should provide custom or copied controller behavior and write the ordered sort entries into `settings["sorts"]`; the default controller should not be treated as a bundled multi-sort UI.
+Hold Shift during the same activation to preserve other sort entries and add, reverse, or clear the selected column. The ordered array defines priority: the first item is primary, and later items are secondary. Only the primary header receives `aria-sort`; every active sort keeps its visible indicator and receives an `aria-description` containing the one-based priority. Adapters that only support one sort field should deliberately reduce the array at their existing mapping boundary.
 
 ## Bundled filter panel contract
 

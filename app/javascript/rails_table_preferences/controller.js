@@ -187,9 +187,9 @@ export default class RailsTablePreferencesController extends RailsTablePreferenc
         ...current,
         key,
         visible: row.querySelector('[data-field="visible"]')?.checked ?? true,
-        order: this.integerValue(row.querySelector('[data-field="order"]')?.value) ?? current.order ?? (index + 1) * 10,
+        order: this.positiveIntegerValue(row.querySelector('[data-field="order"]')?.value) ?? this.positiveIntegerValue(current.order) ?? (index + 1) * 10,
         width: this.clampColumnWidth(key, row.querySelector('[data-field="width"]')?.value),
-        truncate: this.integerValue(row.querySelector('[data-field="truncate"]')?.value),
+        truncate: this.positiveIntegerValue(row.querySelector('[data-field="truncate"]')?.value),
         pinned: current.pinned === true
       })
     })
@@ -198,14 +198,15 @@ export default class RailsTablePreferencesController extends RailsTablePreferenc
   }
 
   filterPanelId(columnKey) {
-    const namespace = this.filterPanelIdNamespace
-    const normalizedColumnKey = String(columnKey || "column").replace(/[^a-zA-Z0-9_-]+/g, "-")
-    return `rails-table-preferences-filter-panel-${namespace}-${normalizedColumnKey}`
+    if (!this.editorIdPrefixValue) return super.filterPanelId(columnKey)
+
+    const normalizedColumnKey = this.filterPanelIdSegment(columnKey, "column")
+    return `rails-table-preferences-filter-panel-${this.filterPanelIdNamespace}-${normalizedColumnKey}`
   }
 
   get filterPanelIdNamespace() {
-    const namespace = this.editorIdPrefixValue || this.tableKeyValue || "table"
-    return String(namespace).replace(/[^a-zA-Z0-9_-]+/g, "-")
+    if (this.editorIdPrefixValue) return this.filterPanelIdSegment(this.editorIdPrefixValue, "table")
+    return `${this.filterPanelIdSegment(this.tableKeyValue, "table")}-${this.filterPanelInstanceId}`
   }
 
   filterPlaceholderAttribute(value) {
@@ -232,6 +233,8 @@ export default class RailsTablePreferencesController extends RailsTablePreferenc
 
   connect() {
     this.statusState = "idle"
+    this.currentPreferenceAction = null
+    this.currentPreferenceActionContext = null
     super.connect()
     this.installDirtyStateTracking()
     this.markEditorClean()
@@ -784,19 +787,27 @@ export default class RailsTablePreferencesController extends RailsTablePreferenc
 
   async withBusyStatus(callback, { busyLabel, successLabel, errorLabel = this.operationFailedStatusLabelValue } = {}) {
     if (this.busy) return null
+    const generation = this.lifecycleGeneration
+    this.partialSuccess = null
     this.setBusyState(true)
     if (busyLabel) this.setStatus(busyLabel, "busy")
 
     try {
       const result = await callback()
-      if (successLabel) this.setStatus(successLabel, "success")
+      if (!this.lifecycleActive(generation)) return null
+      const partialSuccessMessage = this.partialSuccess?.generation === generation ? this.partialSuccess.message : null
+      if (partialSuccessMessage) this.setStatus(partialSuccessMessage, "warning")
+      else if (successLabel) this.setStatus(successLabel, "success")
       return result
     } catch (error) {
-      this.handleOperationError(error, errorLabel)
+      if (this.lifecycleActive(generation)) this.handleOperationError(error, errorLabel)
       return null
     } finally {
-      this.setBusyState(false)
-      this.syncResetButtonState()
+      if (this.lifecycleActive(generation)) {
+        this.setBusyState(false)
+        this.syncResetButtonState()
+      }
+      if (this.partialSuccess?.generation === generation) this.partialSuccess = null
     }
   }
 
@@ -804,8 +815,10 @@ export default class RailsTablePreferencesController extends RailsTablePreferenc
     if (this.busy) return null
     if (!this.currentPreferenceEditable) return this.createPresetFromEditor(event)
 
+    const generation = this.lifecycleGeneration
     const result = await this.withPreferenceAction("save", () => super.save(event))
-    if (result !== null && this.statusState === "success") {
+    if (!this.lifecycleActive(generation)) return null
+    if (result !== null && ["success", "warning"].includes(this.statusState)) {
       this.markEditorClean()
       this.dispatchPreferenceEvent("saved", { action: "save" })
     } else {
@@ -818,8 +831,10 @@ export default class RailsTablePreferencesController extends RailsTablePreferenc
   async createPresetFromEditor(event) {
     if (this.busy) return null
 
+    const generation = this.lifecycleGeneration
     const result = await this.withPreferenceAction("create", () => super.createPresetFromEditor(event))
-    if (result !== null && this.statusState === "success") {
+    if (!this.lifecycleActive(generation)) return null
+    if (result !== null && ["success", "warning"].includes(this.statusState)) {
       this.markEditorClean()
       this.dispatchPreferenceEvent("saved", { action: "create" })
     } else {
@@ -832,8 +847,10 @@ export default class RailsTablePreferencesController extends RailsTablePreferenc
   async selectPreset(event) {
     if (this.busy) return null
 
+    const generation = this.lifecycleGeneration
     const result = await this.withPreferenceAction("load", () => super.selectPreset(event))
-    if (result !== null && this.statusState === "success") {
+    if (!this.lifecycleActive(generation)) return null
+    if (result !== null && ["success", "warning"].includes(this.statusState)) {
       this.clearEditorSearchQuery()
       this.markEditorClean()
       this.dispatchPreferenceEvent("loaded", { action: "load" })
@@ -849,14 +866,17 @@ export default class RailsTablePreferencesController extends RailsTablePreferenc
     if (!this.currentPreferenceEditable) return undefined
     if (!this.confirmDeletePreset()) return undefined
 
+    const actionGeneration = this.lifecycleGeneration
     const deletedName = this.currentPresetName
     const result = await this.withPreferenceAction("delete", async () => {
       return this.withBusyStatus(async () => {
+        const generation = this.lifecycleGeneration
         const response = await fetch(this.preferenceUrl(deletedName), {
           method: "DELETE",
           headers: { "Accept": "application/json", "X-CSRF-Token": this.csrfToken }
         })
         if (!response.ok && response.status !== 204) throw new Error(`Failed to delete table preference preset: ${response.status}`)
+        if (!this.lifecycleActive(generation)) return
         this.nameValue = "default"
         this.urlValue = this.preferenceUrl("default")
         this.currentPreferenceEditable = true
@@ -870,14 +890,15 @@ export default class RailsTablePreferencesController extends RailsTablePreferenc
         this.syncPresetEditingState()
         this.markEditorClean()
         this.syncResetButtonState()
-        await this.refreshPresetOptions()
+        await this.refreshPresetOptionsAfterMutation(generation)
       }, {
         busyLabel: this.deletingStatusLabelValue,
         successLabel: this.deletedStatusLabelValue,
         errorLabel: this.deletingFailedStatusLabelValue
       })
     })
-    if (result !== null && this.statusState === "success") this.dispatchPreferenceEvent("deleted", { action: "delete", name: deletedName })
+    if (!this.lifecycleActive(actionGeneration)) return null
+    if (result !== null && ["success", "warning"].includes(this.statusState)) this.dispatchPreferenceEvent("deleted", { action: "delete", name: deletedName })
     return result
   }
 
@@ -896,9 +917,23 @@ export default class RailsTablePreferencesController extends RailsTablePreferenc
   }
 
   withPreferenceAction(action, callback) {
-    const previousAction = this.currentPreferenceAction
+    const generation = this.lifecycleGeneration
+    const context = {
+      action,
+      generation,
+      previous: this.currentPreferenceActionContext,
+      active: true
+    }
+    this.currentPreferenceActionContext = context
     this.currentPreferenceAction = action
-    const restore = () => { this.currentPreferenceAction = previousAction }
+    const restore = () => {
+      context.active = false
+      if (this.lifecycleGeneration !== generation || this.currentPreferenceActionContext !== context) return
+      let previous = context.previous
+      while (previous && !previous.active) previous = previous.previous
+      this.currentPreferenceActionContext = previous || null
+      this.currentPreferenceAction = previous?.action || null
+    }
 
     try {
       const result = callback()
@@ -919,9 +954,14 @@ export default class RailsTablePreferencesController extends RailsTablePreferenc
     return {
       tableKey: this.tableKeyValue,
       name: this.currentPresetName,
-      settings: this.settingsValue,
+      settings: this.settingsSnapshot(this.settingsValue),
       ...detail
     }
+  }
+
+  settingsSnapshot(settings) {
+    if (typeof structuredClone === "function") return structuredClone(settings)
+    return JSON.parse(JSON.stringify(settings || {}))
   }
 
   installTableColumnDragHandles() {

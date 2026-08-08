@@ -126,3 +126,15 @@ RSpec.describe "rails_table_preferences lifecycle event payloads" do
     end
   end
 end
+
+RSpec.describe "rails_table_preferences lifecycle event snapshot isolation" do
+  let(:source) do
+    File.read(File.expand_path("../../app/javascript/rails_table_preferences/controller.js", __dir__))
+  end
+
+  it "copies settings before exposing them to host listeners" do
+    expect(source).to include("settings: this.settingsSnapshot(this.settingsValue)")
+    expect(source).to include('if (typeof structuredClone === "function") return structuredClone(settings)')
+    expect(source).to include("return JSON.parse(JSON.stringify(settings || {}))")
+  end
+end

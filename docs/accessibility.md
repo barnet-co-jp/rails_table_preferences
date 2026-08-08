@@ -43,11 +43,12 @@ Sortable headers receive `aria-sort`:
 </th>
 ```
 
-The controller updates the value as sort state changes:
+The controller adds `aria-sort` only to the primary sorted header and updates it as that direction changes:
 
-- `none`
 - `ascending`
 - `descending`
+
+When Shift-modified sorting adds secondary columns, every active sorted header receives `aria-description="並び替え優先順位: N"`, while visible `▲` / `▼` indicators remain on each sorted column. Keeping `aria-sort` on only the primary header avoids exposing multiple current sort headers; the priority description communicates the ordered multi-sort state.
 
 ## Filter buttons
 

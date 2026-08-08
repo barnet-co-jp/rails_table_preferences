@@ -511,18 +511,18 @@ RSpec.describe "rails_table_preferences JavaScript entrypoints" do
             querySelector(selector) {
               return selector === "[data-rails-table-preferences-sort-indicator]" ? this.sortIndicator : null
             },
-            setAttribute(name, value) { this.attributes[name] = value }
+            setAttribute(name, value) { this.attributes[name] = value },
+            removeAttribute(name) { delete this.attributes[name] }
           }
         }
 
         const hostTitleCell = cell({ key: "account", title: "Business owner help" })
         const generatedHintCell = cell({ key: "total" })
         const controller = new ControllerClass()
-        let activeSort = null
+        controller.settingsValue = { sorts: [] }
 
         Object.defineProperty(controller, "headerCells", { value: [hostTitleCell, generatedHintCell] })
         controller.columnDefinitionByKey = () => ({ sortable: true })
-        controller.sortFor = (key) => activeSort?.key === key ? activeSort : undefined
         controller.sortAscLabelValue = "Sort ascending"
         controller.sortDescLabelValue = "Sort descending"
         controller.sortClearLabelValue = "Clear sort"
@@ -537,7 +537,7 @@ RSpec.describe "rails_table_preferences JavaScript entrypoints" do
           throw new Error("generated sort hint was not applied to an untitled sortable header")
         }
 
-        activeSort = { key: "account", direction: "desc" }
+        controller.settingsValue = { sorts: [{ key: "account", direction: "desc" }] }
         controller.syncSortStates()
 
         if (hostTitleCell.title !== "Business owner help") {

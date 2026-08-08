@@ -131,6 +131,7 @@ The bundled editor passes these values to the controller root so the Stimulus co
 - `rails_table_preferences.editor.sort_asc`
 - `rails_table_preferences.editor.sort_desc`
 - `rails_table_preferences.editor.sort_clear`
+- `rails_table_preferences.editor.sort_priority`
 
 Host apps can also override the generated controller-root attributes for a single mounted table, such as `data-rails-table-preferences-filter-label-value` or `data-rails-table-preferences-sort-asc-label-value`, when one screen needs wording that differs from the global locale.
 
