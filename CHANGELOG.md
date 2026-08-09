@@ -2,11 +2,11 @@
 
 All notable changes to Rails Table Preferences will be documented in this file.
 
-The format is based on a lightweight Keep a Changelog style, and this project currently follows early pre-1.0 semantic versioning.
+The format is based on a lightweight Keep a Changelog style, and this project follows semantic versioning.
 
 ## [Unreleased]
 
-Until v0.1.0 is tagged, the detailed entries in this section are the temporary source for the initial release contents. In the release-prep or tag PR, move the landed entries into `[0.1.0] - YYYY-MM-DD`, leave a fresh empty `[Unreleased]` section for post-release work, and keep open pull requests or proposal issues out of the dated release entry until they land.
+## [1.0.0] - 2026-08-09
 
 ### Release highlights
 
@@ -61,7 +61,7 @@ Until v0.1.0 is tagged, the detailed entries in this section are the temporary s
 - README and Quick Start now state the Stimulus runtime prerequisite before engine and frontend-specific setup.
 
 - The initial release target now includes the former v0.2 advanced preference distribution and table layout features.
-- README roadmap and current scope were updated to reflect the expanded v0.1 scope.
+- README roadmap and current scope were updated to reflect the expanded initial release scope.
 - Generated migrations use nullable owner references and `scope_type` / `scope_key` to support owner, shared, role, and organization presets.
 - The bundled JavaScript controller treats non-owner presets as read-only in the normal editor path and falls back to creating an owner preset when saving edits.
 - Preset list loading failure copy now explains the current-name-only fallback and asks users to check the connection and reload before retrying the editor flow.
@@ -114,6 +114,6 @@ Until v0.1.0 is tagged, the detailed entries in this section are the temporary s
 - Select filter option search no longer shows the no-results message when the current selected option is the only match, while still preserving selected options as visible context for non-matching queries.
 - The install generator now rejects custom owner foreign keys that do not end with `_id`, avoiding generated reference migrations and table preference indexes that disagree with the configured owner column.
 
-## [0.1.0] - Unreleased
+## [0.1.0]
 
-Initial public release target. The entries above describe the planned contents of this release until it is tagged.
+Superseded by v1.0.0. All entries originally planned for 0.1.0 are included in the 1.0.0 release above.

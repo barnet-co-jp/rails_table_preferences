@@ -23,7 +23,7 @@ The task checks the newest built gem under `pkg/` and fails if required runtime,
 A successful run prints a message like:
 
 ```text
-Package verification passed: rails_table_preferences-0.1.0.alpha.gem
+Package verification passed: rails_table_preferences-1.0.0.gem
 ```
 
 If required files, package export or top-level types targets, package-internal JavaScript imports, package-internal declaration imports, packaged metadata, or gemspec release metadata are missing or invalid, the task prints the missing paths and exits with failure.
@@ -31,7 +31,7 @@ If required files, package export or top-level types targets, package-internal J
 Failure output starts with a compact summary line before the detailed lists:
 
 ```text
-Package verification failed: rails_table_preferences-0.1.0.alpha.gem
+Package verification failed: rails_table_preferences-1.0.0.gem
 Package verification summary: 4 issue(s) (required files: 1, package export targets: 1, package internal JavaScript imports: 1, package internal declaration imports: 1, package metadata errors: 0, gemspec metadata errors: 0)
 ```
 

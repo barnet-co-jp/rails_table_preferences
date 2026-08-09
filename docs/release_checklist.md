@@ -9,8 +9,8 @@ The goal is to catch packaging, generator, documentation, and host-application i
 - [ ] Decide the target version.
 - [ ] Update the version constant if needed.
 - [ ] Move `CHANGELOG.md` entries from `[Unreleased]` to the target version section.
-- [ ] For the v0.1.0 release-prep or tag PR, keep a fresh empty `[Unreleased]` section for post-release work and rename `[0.1.0] - Unreleased` to `[0.1.0] - YYYY-MM-DD` with the actual release date.
-- [ ] Do not describe open pull requests, proposal issues, or unmerged roadmap items as released in `[0.1.0]`; leave them in `[Unreleased]` or out of the release entry until they land.
+- [ ] For a new release, keep a fresh empty `[Unreleased]` section for post-release work and rename the target version section to `[X.Y.Z] - YYYY-MM-DD` with the actual release date.
+- [ ] Do not describe open pull requests, proposal issues, or unmerged roadmap items as released in the dated section; leave them in `[Unreleased]` or out of the release entry until they land.
 - [ ] Before moving `Added`, `Changed`, or `Fixed` wording into a dated release entry, cross-check complete-sounding changelog lines against open pull requests, open issues, and `agent:planned` items. If a line depends on an open item, such as numeric-settings normalization work like #1313, leave it out of the dated release entry or rewrite it as non-release context until the implementation lands.
 - [ ] Confirm the README release-readiness summary still matches the changelog cutover state before tagging.
 - [ ] Confirm `CHANGELOG.md` covers user-facing changes, migration changes, generator changes, JavaScript/CSS changes, and known limitations.
@@ -302,7 +302,7 @@ Before publishing, summarize:
 
 Use `CHANGELOG.md` as the detailed release history. Use the release note as a short adoption-facing summary that a host-app maintainer can scan before trying the gem. Do not copy open pull requests, proposal issues, or unmerged behavior into the release note as released support.
 
-For the first public `0.1.0` release, start from this compact template in the release-prep PR body or GitHub release draft:
+For a new release, start from this compact template in the release-prep PR body or GitHub release draft:
 
 ```markdown
 ## Summary

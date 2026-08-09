@@ -209,9 +209,7 @@ bin/rails generate rails_table_preferences:stylesheets
 
 ## Current scope
 
-The current implementation includes the former v0.2 roadmap items in the initial v0.1 release target.
-
-Included in v0.1 scope:
+The v1.0.0 release includes the following capabilities:
 
 - Table-specific display settings
 - Owner-specific preference persistence
@@ -263,50 +261,6 @@ Rails Table Preferences intentionally does not try to become:
 - A complete admin UI for managing shared, role, or organization presets
 
 ## Roadmap
-
-### v0.1: Initial usable release
-
-This is the current target version. It is intended to be usable in real Rails applications after local sandbox/manual verification.
-
-Included scope:
-
-- Column visibility, order, width, truncation, fixed/pinned metadata, overflow metadata, and column group metadata
-- Spreadsheet-like auto-fit by double-clicking a column resize handle
-- Owner, shared, role, and organization scoped presets
-- Default preset resolution across owner, role, organization, and shared scopes
-- Apply, Save, Save as new, Delete, and Reset actions
-- Read-only handling for non-owner presets in the normal editor path
-- Ignored columns
-- Configurable column labels through explicit labels, explicit i18n keys, database column comments, and optional locale/humanize fallbacks
-- Filter metadata and saved filter UI state
-- Sort metadata and sortable header click UI
-- Plain controller params adapter
-- Ransack adapter
-- Hidden fields helper for existing search forms
-- Convention-first `resource_table_for` and `tree_resource_table_for` helpers with Active Record column inference
-- `RailsTablePreferences::TableProfile` overrides for labels, filters, editors, display values, and column order
-- Renderer registries for host-app filter/editor controls such as Rails Fields Kit
-- Export payload helper for host app CSV/Excel/report code
-- Rails helpers and Stimulus integration
-- JavaScript package entrypoints for Vite / `app/frontend` registration
-- JSON API for preference and preset persistence
-- Migration, install, JavaScript, stylesheet, and view generators
-- `--with-demo`, `--skip-javascript`, and `--skip-stylesheets` install options
-- Owner model and owner foreign key generator/configuration options
-- Existing `ColumnAdjustment` compatibility and import guidance
-- Copy-based ERB, CSS, and JavaScript customization path
-- Quick start, practical examples, troubleshooting, demo, sandbox, decision guide, scoped presets, fixed columns/groups, export integration, accessibility baseline, manual QA, release checklist, and package verification docs
-
-Remaining before tagging v0.1:
-
-Use the [Release checklist](docs/release_checklist.md) as the detailed release-readiness source of truth; this README list is the short summary before tagging.
-
-- Confirm CI is green on the release commit
-- Do one final sandbox/demo verification pass
-- Inspect package contents with [Package verification](docs/package_verification.md)
-- Move `CHANGELOG.md` entries from `[Unreleased]` to `0.1.0` when tagging
-- Review README/docs consistency against the released behavior
-- Cross-check open pull requests, proposal issues, and `agent:planned` items before treating README or changelog wording as released behavior
 
 ### Later candidates
 
@@ -891,7 +845,7 @@ Before tagging or publishing a release, also inspect the built package with [Pac
 
 ## Development status
 
-This gem is in active initial development. The current test suite is expected to pass locally, and the copied controller plus packaged JavaScript export targets should pass `node script/check_javascript_syntax.mjs`.
+This gem is at v1.0.0 and used in production. The current test suite is expected to pass locally, and the copied controller plus packaged JavaScript export targets should pass `node script/check_javascript_syntax.mjs`.
 
 ## License
 

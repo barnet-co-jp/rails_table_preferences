@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
 
   spec.summary = "Table display preferences for Rails applications."
   spec.description = "Rails Table Preferences saves and restores table display settings such as column visibility, order, width, truncation, filters, sorts, presets, fixed columns, groups, and export column order."
-  spec.homepage = "https://github.com/matsuo-haruhito/rails_table_preferences"
+  spec.homepage = "https://github.com/barnet-co-jp/rails_table_preferences"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.1"
 
