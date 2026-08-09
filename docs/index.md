@@ -91,8 +91,8 @@ Do not add a TreeView-style public API manifest as the default first response to
 
 ## Maintainer entry
 
-- [Product Profile](https://github.com/matsuo-haruhito/rails_table_preferences/blob/main/Product%20Profile.md): concise maintainer-facing overview of the product surface, responsibility boundary, and release posture.
-- [AGENTS.md](https://github.com/matsuo-haruhito/rails_table_preferences/blob/main/AGENTS.md): repository guardrails, source-of-truth order, and change boundaries for assisted maintenance work.
+- [Product Profile](https://github.com/barnet-co-jp/rails_table_preferences/blob/main/Product%20Profile.md): concise maintainer-facing overview of the product surface, responsibility boundary, and release posture.
+- [AGENTS.md](https://github.com/barnet-co-jp/rails_table_preferences/blob/main/AGENTS.md): repository guardrails, source-of-truth order, and change boundaries for assisted maintenance work.
 - [CHANGELOG.md](../CHANGELOG.md): current unreleased scope and release narrative.
 
 ## Recommended integration order

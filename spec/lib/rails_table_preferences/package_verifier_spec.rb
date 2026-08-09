@@ -128,7 +128,7 @@ RSpec.describe RailsTablePreferences::PackageVerifier do
 
     it "accepts gemspec metadata URLs that point to the repository entrypoints" do
       verifier = described_class.new(gem_path: "dummy.gem", required_paths: %w[README.md CHANGELOG.md docs/index.md])
-      homepage = "https://github.com/matsuo-haruhito/rails_table_preferences"
+      homepage = "https://github.com/barnet-co-jp/rails_table_preferences"
       allow(verifier).to receive(:package_spec).and_return(
         package_spec_double(
           files: %w[CHANGELOG.md README.md docs/index.md],
@@ -150,7 +150,7 @@ RSpec.describe RailsTablePreferences::PackageVerifier do
 
     it "reports gemspec metadata URLs that drift from repository entrypoints" do
       verifier = described_class.new(gem_path: "dummy.gem", required_paths: %w[README.md CHANGELOG.md docs/index.md])
-      homepage = "https://github.com/matsuo-haruhito/rails_table_preferences"
+      homepage = "https://github.com/barnet-co-jp/rails_table_preferences"
       allow(verifier).to receive(:package_spec).and_return(
         package_spec_double(
           files: %w[CHANGELOG.md README.md docs/index.md],
