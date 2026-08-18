@@ -14,6 +14,8 @@ export type {
   RailsTablePreferencesLifecycleEvent,
   RailsTablePreferencesSettingsSnapshot,
   RailsTablePreferencesSortSnapshot,
+  RailsTablePreferencesStateChangeAction,
+  RailsTablePreferencesStateChangedEventDetail,
   RailsTablePreferencesSuccessAction,
   RailsTablePreferencesSuccessEventDetail
 } from "./controller"

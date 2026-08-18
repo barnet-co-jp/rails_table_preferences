@@ -19,26 +19,25 @@ module RailsTablePreferences
       return unless owner
 
       scope_context = rails_table_preferences_scope_context if scope_context.nil?
-
-      if name.present?
-        return RailsTablePreferences::Preference.available_named_preference(
-          user: owner,
-          table_key: table_key,
-          name: name,
-          scope_context: scope_context
-        )
-      end
-
-      RailsTablePreferences::Preference.default_for(
-        user: owner,
+      RailsTablePreferences.resolve_preference(
+        owner: owner,
         table_key: table_key,
+        name: name,
         scope_context: scope_context
       )
     end
 
     def rails_table_preference_settings(table_key:, name: nil, owner: nil, scope_context: nil, fallback: {})
-      preference = rails_table_preference(table_key: table_key, name: name, owner: owner, scope_context: scope_context)
-      RailsTablePreferences::SettingsNormalizer.call(preference&.settings || fallback || {})
+      owner ||= rails_table_preferences_current_owner
+      scope_context = rails_table_preferences_scope_context if scope_context.nil?
+
+      RailsTablePreferences.resolve_settings(
+        owner: owner,
+        table_key: table_key,
+        name: name,
+        scope_context: scope_context,
+        fallback: fallback
+      )
     end
 
     # Converts saved table preference filters/sorts into params for the host app.

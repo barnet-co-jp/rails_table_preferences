@@ -167,4 +167,34 @@ export default class RailsTablePreferencesPresetSelectRecoveryController extends
     this.presetSelectTarget.value = name || "default"
     this.syncDeletePresetButtonContext()
   }
+
+  toggleSortFromHeader(event, cell, column) {
+    const previous = this.stateChangeFingerprint()
+    const result = super.toggleSortFromHeader(event, cell, column)
+    this.dispatchStateChangedIfNeeded(previous, "sort-change")
+    return result
+  }
+
+  applyFilterPanel(key, panel) {
+    const previous = this.stateChangeFingerprint()
+    const result = super.applyFilterPanel(key, panel)
+    this.dispatchStateChangedIfNeeded(previous, "filter-change")
+    return result
+  }
+
+  clearFilter(key) {
+    const previous = this.stateChangeFingerprint()
+    const result = super.clearFilter(key)
+    this.dispatchStateChangedIfNeeded(previous, "filter-clear")
+    return result
+  }
+
+  dispatchStateChangedIfNeeded(previousFingerprint, action) {
+    if (previousFingerprint === this.stateChangeFingerprint()) return
+    this.dispatchPreferenceEvent("state-changed", { action })
+  }
+
+  stateChangeFingerprint() {
+    return this.normalizedSettingsSignature(this.settingsValue || {})
+  }
 }
