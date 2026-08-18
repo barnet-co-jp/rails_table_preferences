@@ -156,6 +156,13 @@ module RailsTablePreferences
         steps = [
           ["Run: bin/rails db:migrate"],
           [
+            "Before writing custom RTP integration code, read the integration guidance bundled with the installed gem.",
+            "     Locate the exact bundled version with: bundle show rails_table_preferences",
+            '     Read: $(bundle show rails_table_preferences)/docs/host_app_integration_guardrails.md',
+            '     Read: $(bundle show rails_table_preferences)/docs/decision_guide.md',
+            "     Prefer public APIs, helpers, package entrypoints, and lifecycle events before querying RTP models or overriding controller internals."
+          ],
+          [
             engine_route_step_heading,
             "       #{ENGINE_ROUTE}",
             "     If you use a custom initializer mount_path, update the route path manually to match it."
