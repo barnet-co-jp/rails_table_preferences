@@ -280,6 +280,8 @@ export default class extends Controller {
   }
 
   async refreshPresetOptionsOnConnect() {
+    if (!this.hasPresetSelectTarget) return null
+
     return this.withBusyStatus(async () => {
       await this.refreshPresetOptions()
     }, {
@@ -451,7 +453,8 @@ export default class extends Controller {
     })
     this.setEditorRowsBusyState(this.busy)
     this.setTableInteractionBusyState(this.busy)
-    this.element.setAttribute("aria-busy", this.busy ? "true" : "false")
+    if (this.busy) this.element.setAttribute("aria-busy", "true")
+    else this.element.removeAttribute("aria-busy")
     if (!this.busy) this.syncPresetEditingState()
   }
 
