@@ -267,7 +267,8 @@
   padding: 0.25rem 0.625rem;
 }
 
-.rails-table-preferences-table-column-draggable {
+.rails-table-preferences-table-column-draggable,
+.rails-table-preferences-table-column-draggable.rails-table-preferences-sortable-column {
   cursor: grab;
 }
 
@@ -519,6 +520,41 @@ th[data-rails-table-preferences-fixed="true"] {
   .rails-table-preferences-editor__row > .rails-table-preferences-editor__truncate {
     grid-column: 1 / -1;
     grid-row: 4;
+  }
+}
+
+@media (max-width: 26rem) {
+  .rails-table-preferences-editor__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rails-table-preferences-editor__drag-handle,
+  .rails-table-preferences-editor__row-actions,
+  .rails-table-preferences-editor__visible,
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__order,
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__width,
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__truncate {
+    grid-column: 1;
+  }
+
+  .rails-table-preferences-editor__row-actions {
+    grid-row: 2;
+  }
+
+  .rails-table-preferences-editor__visible {
+    grid-row: 3;
+  }
+
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__order {
+    grid-row: 4;
+  }
+
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__width {
+    grid-row: 5;
+  }
+
+  .rails-table-preferences-editor__row > .rails-table-preferences-editor__truncate {
+    grid-row: 6;
   }
 }
 
