@@ -2,7 +2,7 @@
 
 RSpec.describe "biz-ops RTP regression guardrails" do
   let(:controller_source) do
-    File.read(File.expand_path("../../app/javascript/controllers/rails_table_preferences_controller.js", __dir__)).gsub(/\r\n?/, "\n")
+    File.read(File.expand_path("../../app/javascript/controllers/rails_table_preferences_controller.js", __dir__)).gsub(/\r\n?/, "\n").gsub(/^  /, "")
   end
 
   let(:stylesheet_source) do

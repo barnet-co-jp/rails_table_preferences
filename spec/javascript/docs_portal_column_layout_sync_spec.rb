@@ -2,7 +2,7 @@
 
 RSpec.describe "docs-portal column layout sync" do
   let(:source) do
-    File.read(File.expand_path("../../app/javascript/rails_table_preferences/preset_select_recovery.js", __dir__)).gsub(/\r\n?/, "\n")
+    File.read(File.expand_path("../../app/javascript/rails_table_preferences/preset_select_recovery.js", __dir__)).gsub(/\r\n?/, "\n").gsub(/^  /, "")
   end
 
   it "uses the existing settings-sync channel for column layout updates" do

@@ -81,7 +81,8 @@ RSpec.describe "rails_table_preferences preset async status JavaScript contract"
             if (selector === "[data-action~='rails-table-preferences#deletePreset']") return []
             return []
           },
-          setAttribute(name, value) { elementAttributes[name] = value }
+          setAttribute(name, value) { elementAttributes[name] = value },
+          removeAttribute(name) { delete elementAttributes[name] }
         }
         const draftSettings = {
           columns: [{ key: "status", visible: false }],
