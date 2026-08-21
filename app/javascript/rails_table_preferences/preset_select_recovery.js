@@ -1,5 +1,8 @@
 import RailsTablePreferencesController from "./controller.js"
 
+const settingsSyncEventName = "rails-table-preferences:settings-sync"
+const columnLayoutSyncMode = "column-layout"
+
 export default class RailsTablePreferencesPresetSelectRecoveryController extends RailsTablePreferencesController {
   static values = {
     ...(RailsTablePreferencesController.values || {}),
@@ -166,5 +169,98 @@ export default class RailsTablePreferencesPresetSelectRecoveryController extends
 
     this.presetSelectTarget.value = name || "default"
     this.syncDeletePresetButtonContext()
+  }
+
+  receiveSettingsSync(event) {
+    const detail = event.detail || {}
+    if (detail.syncMode !== columnLayoutSyncMode) return super.receiveSettingsSync(event)
+    if (!this.connected || event.target === this.element) return
+    if (String(detail.tableKey) !== String(this.tableKeyValue)) return
+    if (!detail.settings || typeof detail.settings !== "object" || Array.isArray(detail.settings)) return
+
+    this.settingsValue = this.mergeColumnLayoutSettings(this.settingsValue || {}, detail.settings)
+    if (this.hasEditorRowsTarget) this.refreshEditorFromSettings()
+    if (this.tableElement) this.apply()
+  }
+
+  mergeColumnLayoutSettings(currentSettings, sourceSettings) {
+    const sourceColumns = new Map(Array(sourceSettings?.columns || []).map((column) => [column.key, column]))
+    const columns = Array(currentSettings?.columns || []).map((column) => {
+      const source = sourceColumns.get(column.key)
+      if (!source) return column
+
+      return this.withColumnWidthMetadata({
+        ...column,
+        order: source.order ?? column.order,
+        width: source.width ?? column.width
+      })
+    }).sort((left, right) => this.orderValue(left) - this.orderValue(right))
+
+    return { ...currentSettings, columns }
+  }
+
+  broadcastColumnLayoutSync() {
+    if (typeof CustomEvent === "undefined" || !this.element?.dispatchEvent) return
+
+    this.element.dispatchEvent(new CustomEvent(settingsSyncEventName, {
+      bubbles: true,
+      detail: {
+        tableKey: this.tableKeyValue,
+        name: this.currentPresetName,
+        settings: this.settingsSyncSnapshot(this.settingsValue || {}),
+        syncMode: columnLayoutSyncMode
+      }
+    }))
+  }
+
+  stopColumnResize() {
+    const hadActiveResize = Boolean(this.resizingColumn)
+    const result = super.stopColumnResize()
+    if (hadActiveResize) this.broadcastColumnLayoutSync()
+    return result
+  }
+
+  autoFitColumnFromHandle(event) {
+    const previous = this.stateChangeFingerprint()
+    const result = super.autoFitColumnFromHandle(event)
+    if (previous !== this.stateChangeFingerprint()) this.broadcastColumnLayoutSync()
+    return result
+  }
+
+  endTableColumnDrag(event) {
+    const hadActiveDrag = Boolean(this.draggedTableColumnKey)
+    const result = super.endTableColumnDrag(event)
+    if (hadActiveDrag) this.broadcastColumnLayoutSync()
+    return result
+  }
+
+  toggleSortFromHeader(event, cell, column) {
+    const previous = this.stateChangeFingerprint()
+    const result = super.toggleSortFromHeader(event, cell, column)
+    this.dispatchStateChangedIfNeeded(previous, "sort-change")
+    return result
+  }
+
+  applyFilterPanel(key, panel) {
+    const previous = this.stateChangeFingerprint()
+    const result = super.applyFilterPanel(key, panel)
+    this.dispatchStateChangedIfNeeded(previous, "filter-change")
+    return result
+  }
+
+  clearFilter(key) {
+    const previous = this.stateChangeFingerprint()
+    const result = super.clearFilter(key)
+    this.dispatchStateChangedIfNeeded(previous, "filter-clear")
+    return result
+  }
+
+  dispatchStateChangedIfNeeded(previousFingerprint, action) {
+    if (previousFingerprint === this.stateChangeFingerprint()) return
+    this.dispatchPreferenceEvent("state-changed", { action })
+  }
+
+  stateChangeFingerprint() {
+    return this.normalizedSettingsSignature(this.settingsValue || {})
   }
 }

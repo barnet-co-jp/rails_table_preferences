@@ -1,11 +1,12 @@
 import { Controller } from "@hotwired/stimulus"
 
-export type RailsTablePreferencesLifecycleEvent = "applied" | "saved" | "loaded" | "deleted" | "error"
+export type RailsTablePreferencesLifecycleEvent = "applied" | "saved" | "loaded" | "deleted" | "state-changed" | "error"
 export type RailsTablePreferencesEventName = `rails-table-preferences:${RailsTablePreferencesLifecycleEvent}`
 
 export type RailsTablePreferencesSuccessAction = "apply" | "reset" | "save" | "create" | "load" | "delete" | "clear-filters-and-sorts"
+export type RailsTablePreferencesStateChangeAction = "sort-change" | "filter-change" | "filter-clear"
 export type RailsTablePreferencesErrorAction = RailsTablePreferencesSuccessAction | "load-presets" | "operation"
-export type RailsTablePreferencesLifecycleAction = RailsTablePreferencesSuccessAction | RailsTablePreferencesErrorAction
+export type RailsTablePreferencesLifecycleAction = RailsTablePreferencesSuccessAction | RailsTablePreferencesStateChangeAction | RailsTablePreferencesErrorAction
 
 export interface RailsTablePreferencesColumnGroupSnapshot {
   key?: string | number | null
@@ -66,6 +67,10 @@ export type RailsTablePreferencesSuccessEventDetail = RailsTablePreferencesEvent
   action: RailsTablePreferencesSuccessAction
 }
 
+export type RailsTablePreferencesStateChangedEventDetail = RailsTablePreferencesEventDetailBase & {
+  action: RailsTablePreferencesStateChangeAction
+}
+
 export type RailsTablePreferencesErrorEventDetail = RailsTablePreferencesEventDetailBase & {
   action: RailsTablePreferencesErrorAction
   message: string
@@ -76,12 +81,13 @@ export interface RailsTablePreferencesEventDetailMap {
   "rails-table-preferences:saved": RailsTablePreferencesSuccessEventDetail
   "rails-table-preferences:loaded": RailsTablePreferencesSuccessEventDetail
   "rails-table-preferences:deleted": RailsTablePreferencesSuccessEventDetail
+  "rails-table-preferences:state-changed": RailsTablePreferencesStateChangedEventDetail
   "rails-table-preferences:error": RailsTablePreferencesErrorEventDetail
 }
 
 export type RailsTablePreferencesEventDetailFor<EventName extends RailsTablePreferencesEventName> = RailsTablePreferencesEventDetailMap[EventName]
 
-export type RailsTablePreferencesEventDetail = RailsTablePreferencesSuccessEventDetail | RailsTablePreferencesErrorEventDetail
+export type RailsTablePreferencesEventDetail = RailsTablePreferencesSuccessEventDetail | RailsTablePreferencesStateChangedEventDetail | RailsTablePreferencesErrorEventDetail
 
 declare const RailsTablePreferencesController: typeof Controller
 export default RailsTablePreferencesController

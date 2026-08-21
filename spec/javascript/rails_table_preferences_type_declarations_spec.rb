@@ -15,7 +15,7 @@ RSpec.describe "rails_table_preferences TypeScript declarations" do
 
     expect(controller_declaration).to include(
       "export type RailsTablePreferencesLifecycleEvent",
-      "\"applied\" | \"saved\" | \"loaded\" | \"deleted\" | \"error\"",
+      "\"applied\" | \"saved\" | \"loaded\" | \"deleted\" | \"state-changed\" | \"error\"",
       "export type RailsTablePreferencesEventName",
       "`rails-table-preferences:${RailsTablePreferencesLifecycleEvent}`",
       "export type RailsTablePreferencesSuccessAction",

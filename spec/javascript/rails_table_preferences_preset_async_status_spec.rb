@@ -81,7 +81,8 @@ RSpec.describe "rails_table_preferences preset async status JavaScript contract"
             if (selector === "[data-action~='rails-table-preferences#deletePreset']") return []
             return []
           },
-          setAttribute(name, value) { elementAttributes[name] = value }
+          setAttribute(name, value) { elementAttributes[name] = value },
+          removeAttribute(name) { delete elementAttributes[name] }
         }
         const draftSettings = {
           columns: [{ key: "status", visible: false }],
@@ -136,7 +137,7 @@ RSpec.describe "rails_table_preferences preset async status JavaScript contract"
         }
         if (controller.statusState !== "error") throw new Error("failed save did not leave the package controller in error state")
         if (controller.busy !== false) throw new Error("failed save did not release the busy flag")
-        if (elementAttributes["aria-busy"] !== "false") throw new Error("failed save did not clear aria-busy")
+        if ("aria-busy" in elementAttributes) throw new Error("failed save did not clear aria-busy")
         if (actionButton.disabled !== false) throw new Error("failed save did not re-enable editor action buttons")
         if (presetNameTarget.disabled !== false) throw new Error("failed save did not re-enable the preset name input")
         if (editorControl.disabled !== false) throw new Error("failed save did not re-enable generated editor controls")

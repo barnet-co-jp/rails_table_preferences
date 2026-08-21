@@ -267,7 +267,8 @@
   padding: 0.25rem 0.625rem;
 }
 
-.rails-table-preferences-table-column-draggable {
+.rails-table-preferences-table-column-draggable,
+.rails-table-preferences-table-column-draggable.rails-table-preferences-sortable-column {
   cursor: grab;
 }
 

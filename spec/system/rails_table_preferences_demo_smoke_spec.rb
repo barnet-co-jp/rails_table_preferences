@@ -1014,7 +1014,7 @@ RSpec.describe "rails_table_preferences demo browser smoke", type: :system, js: 
     expect(control_disabled?("[data-action~='rails-table-preferences#saveFromEditor']")).to eq(true)
 
     expect(page).to have_css(".rails-table-preferences-editor__status", text: "設定の読み込みを完了できませんでした。")
-    expect(page).to have_css("#rtp-smoke-root[aria-busy='false']", visible: false)
+    expect(page).not_to have_css("#rtp-smoke-root[aria-busy]", visible: false)
     expect(control_disabled?("#rtp-smoke-preset-select")).to eq(false)
     expect(control_disabled?("#rtp-smoke-preset-name")).to eq(false)
     expect(control_disabled?("[data-rails-table-preferences-target='defaultPreset']")).to eq(false)

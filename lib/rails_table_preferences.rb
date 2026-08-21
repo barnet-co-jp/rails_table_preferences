@@ -5,6 +5,7 @@ require "rails_table_preferences/renderer_registry"
 require "rails_table_preferences/configuration"
 require "rails_table_preferences/column_definition"
 require "rails_table_preferences/settings_normalizer"
+require "rails_table_preferences/resolver"
 require "rails_table_preferences/adapters/column_like"
 require "rails_table_preferences/adapters/active_record_columns"
 require "rails_table_preferences/table_profile"
@@ -27,6 +28,20 @@ module RailsTablePreferences
 
     def configure
       yield configuration
+    end
+
+    def resolve_preference(owner:, table_key:, name: nil, scope_context: {})
+      Resolver.preference(owner: owner, table_key: table_key, name: name, scope_context: scope_context)
+    end
+
+    def resolve_settings(owner:, table_key:, name: nil, scope_context: {}, fallback: {})
+      Resolver.settings(
+        owner: owner,
+        table_key: table_key,
+        name: name,
+        scope_context: scope_context,
+        fallback: fallback
+      )
     end
   end
 end
