@@ -40,10 +40,12 @@ RSpec.describe "rails_table_preferences_controller.js" do
     expect(source).to include('sortClearLabel: { type: String, default: "並び替え解除" }')
   end
 
-  it "restricts column display effects to the table element" do
+  it "restricts column display effects to actual table cells" do
     expect(source).to include("cellsFor(key)")
     expect(source).to include("const table = this.tableElement")
-    expect(source).to include('return table.querySelectorAll(`[data-rails-table-preferences-column-key="${this.escapeSelectorValue(key)}"]`)')
+    expect(source).to include("const escapedKey = this.escapeSelectorValue(key)")
+    expect(source).to include('th[data-rails-table-preferences-column-key="${escapedKey}"], td[data-rails-table-preferences-column-key="${escapedKey}"]')
+    expect(source).not_to include('return table.querySelectorAll(`[data-rails-table-preferences-column-key="${this.escapeSelectorValue(key)}"]`)')
     expect(source).to include("escapeSelectorValue(value)")
     expect(source).not_to include('return this.element.querySelectorAll(`[data-rails-table-preferences-column-key="${CSS.escape(key)}"]`)')
   end
