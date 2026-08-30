@@ -1416,7 +1416,8 @@ export default class extends Controller {
   cellsFor(key) {
     const table = this.tableElement
     if (!table) return []
-    return table.querySelectorAll(`[data-rails-table-preferences-column-key="${this.escapeSelectorValue(key)}"]`)
+    const escapedKey = this.escapeSelectorValue(key)
+    return table.querySelectorAll(`th[data-rails-table-preferences-column-key="${escapedKey}"], td[data-rails-table-preferences-column-key="${escapedKey}"]`)
   }
 
   columnByKey(key) {

@@ -204,6 +204,40 @@ RSpec.describe "rails_table_preferences package filter panel accessibility", typ
     JS
   end
 
+  it "keeps resized column width on cells without applying it to the filter button" do
+    visit_accessibility_smoke
+
+    widths = page.evaluate_script(<<~JS)
+      (() => {
+        const controller = window.__rtpAccessibilityController
+        controller.resizingColumn = { key: "customer_name", startX: 100, startWidth: 200 }
+        controller.resizeColumn({ clientX: 140 })
+        controller.resizingColumn = null
+
+        const header = document.querySelector('th[data-rails-table-preferences-column-key="customer_name"]')
+        const bodyCell = document.querySelector('td[data-rails-table-preferences-column-key="customer_name"]')
+        const button = document.querySelector(#{filter_button_selector("customer_name").inspect})
+        return {
+          headerWidth: header?.style.width || "",
+          headerMaxWidth: header?.style.maxWidth || "",
+          bodyWidth: bodyCell?.style.width || "",
+          bodyMaxWidth: bodyCell?.style.maxWidth || "",
+          buttonWidth: button?.style.width || "",
+          buttonMaxWidth: button?.style.maxWidth || ""
+        }
+      })()
+    JS
+
+    expect(widths).to include(
+      "headerWidth" => "240px",
+      "headerMaxWidth" => "240px",
+      "bodyWidth" => "240px",
+      "bodyMaxWidth" => "240px",
+      "buttonWidth" => "",
+      "buttonMaxWidth" => ""
+    )
+  end
+
   it "labels the open lightweight panel and clears controls when Escape closes it" do
     visit_accessibility_smoke
 
